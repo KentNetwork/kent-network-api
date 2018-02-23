@@ -36,7 +36,9 @@ func setupRouter() *gin.Engine {
 			((lat == "") && (lon == "") && (dist == ""))) {
 			c.String(400, "Error: lat,lon,dist mandatory if one of the fields is defined")
 		}
-		c.String(200, "Here are all the sensors")
+		c.JSON(200, gin.H{
+			"message": "Here are all the sensors",
+		})
 	})
 
 	// All measures available from a particular sensor
