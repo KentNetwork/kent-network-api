@@ -64,6 +64,9 @@ func setupRouter() *gin.Engine {
 		// date := c.Query("date")           //values on date
 		// since := c.Query("since")         // values since date
 		s := strings.Split(c.Param("measurementReference"), "_")
+		if len(s) != 3 {
+			c.String(400, "Error: unknown measurementID")
+		}
 		var db, measure string
 		switch s[0] {
 		case "R":
@@ -71,7 +74,8 @@ func setupRouter() *gin.Engine {
 		case "A":
 			db = "air"
 		default:
-			db = ""
+			c.String(400, "Error: unknown measurementID")
+			return
 		}
 		switch s[1] {
 		case "T":
@@ -79,7 +83,8 @@ func setupRouter() *gin.Engine {
 		case "F":
 			measure = "flow"
 		default:
-			measure = ""
+			c.String(400, "Error: unknown measurementID")
+			return
 		}
 		sensorID := s[2]
 		startDate := c.Query("startDate") // values from start_date until end_date
@@ -87,6 +92,7 @@ func setupRouter() *gin.Engine {
 		if !(((startDate != "") && (endDate != "")) ||
 			((startDate == "") && (endDate == ""))) {
 			c.String(400, "Error: start_date,end_date mandatory if one of the fields is defined")
+			return
 		}
 
 		q := fmt.Sprintf("SELECT \"value\" FROM %s WHERE (\"sensor_id\" = '%s') LIMIT %d ", measure, sensorID, 100)
@@ -97,6 +103,7 @@ func setupRouter() *gin.Engine {
 				c.JSON(500, gin.H{
 					"Error": "Marshalling error",
 				})
+				return
 			}
 			c.Writer.Header().Set("Content-Type", "application/json")
 			c.Writer.WriteHeader(200)
@@ -105,7 +112,9 @@ func setupRouter() *gin.Engine {
 			c.JSON(500, gin.H{
 				"Error": "Database Query Error",
 			})
+			return
 		}
+
 	})
 
 	// Return all readings for a particular sensor id
@@ -119,6 +128,7 @@ func setupRouter() *gin.Engine {
 		if !(((startDate != "") && (endDate != "")) ||
 			((startDate == "") && (endDate == ""))) {
 			c.String(400, "Error: start_date,end_date mandatory if one of the fields is defined")
+			return
 		}
 		c.JSON(200, gin.H{
 			"message": "Here are all the readings for this sensor",
@@ -136,6 +146,7 @@ func setupRouter() *gin.Engine {
 		if !(((startDate != "") && (endDate != "")) ||
 			((startDate == "") && (endDate == ""))) {
 			c.String(400, "Error: start_date,end_date mandatory if one of the fields is defined")
+			return
 		}
 		c.JSON(200, gin.H{
 			"message": "Here is all the readings from all the sensors",
