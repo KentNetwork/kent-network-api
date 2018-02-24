@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	client "github.com/influxdata/influxdb/client/v2"
@@ -11,9 +12,9 @@ import (
 
 const (
 	influxHost       = "https://influxdb.kent.network"
-	influxUser       = "*REMOVED*"
-	influxPwd        = "*REMOVED*"
-	influxQueryLimit = 500
+	influxUser       = "river"
+	influxPwd        = "NCQxM3Socdc2K4nEwS"
+	influxQueryLimit = 100
 )
 
 var influxClient = influxDBClient()
@@ -62,28 +63,49 @@ func setupRouter() *gin.Engine {
 		// today := c.Query("today")         // values for date
 		// date := c.Query("date")           //values on date
 		// since := c.Query("since")         // values since date
+		s := strings.Split(c.Param("measurementReference"), "_")
+		var db, measure string
+		switch s[0] {
+		case "R":
+			db = "rivers"
+		case "A":
+			db = "air"
+		default:
+			db = ""
+		}
+		switch s[1] {
+		case "T":
+			measure = "temperature"
+		case "F":
+			measure = "flow"
+		default:
+			measure = ""
+		}
+		sensorID := s[2]
 		startDate := c.Query("startDate") // values from start_date until end_date
 		endDate := c.Query("endDate")     // values from start_date until end_date
 		if !(((startDate != "") && (endDate != "")) ||
 			((startDate == "") && (endDate == ""))) {
 			c.String(400, "Error: start_date,end_date mandatory if one of the fields is defined")
 		}
-		// Line 71 needs to be improved -> first lookup measurement type based on
-		// measure reference then pass sensor reference
-		q := fmt.Sprintf("SELECT * FROM %s LIMIT %d", "temperature", influxQueryLimit)
 
-		if response, err := queryInfluxDB(influxClient, q, "rivers"); err == nil {
-			byteSlice, err := json.Marshal(response)
+		q := fmt.Sprintf("SELECT \"value\" FROM %s WHERE (\"sensor_id\" = '%s') LIMIT %d ", measure, sensorID, 100)
+
+		if response, err := queryInfluxDB(influxClient, q, db); err == nil {
+			byteSlice, err := json.Marshal(response[0].Series)
 			if err != nil {
-				panic(err)
+				c.JSON(500, gin.H{
+					"Error": "Marshalling error",
+				})
 			}
 			c.Writer.Header().Set("Content-Type", "application/json")
 			c.Writer.WriteHeader(200)
 			c.Writer.Write(byteSlice)
 		} else {
-			log.Println("err: influx read error")
+			c.JSON(500, gin.H{
+				"Error": "Database Query Error",
+			})
 		}
-
 	})
 
 	// Return all readings for a particular sensor id
