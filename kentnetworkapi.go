@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	client "github.com/influxdata/influxdb/client/v2"
+	"github.com/qntfy/kazaam"
 )
 
 const (
@@ -59,6 +60,7 @@ func setupRouter() *gin.Engine {
 
 	// Return all readings for a particular measure reference
 	r.GET("/measures/:measurementReference/readings", func(c *gin.Context) {
+
 		// latest := c.Query("latest")       // latest values
 		// today := c.Query("today")         // values for date
 		// date := c.Query("date")           //values on date
@@ -66,6 +68,7 @@ func setupRouter() *gin.Engine {
 		s := strings.Split(c.Param("measurementReference"), "_")
 		if len(s) != 3 {
 			c.String(400, "Error: unknown measurementID")
+			return
 		}
 		var db, measure string
 		switch s[0] {
@@ -99,6 +102,10 @@ func setupRouter() *gin.Engine {
 
 		if response, err := queryInfluxDB(influxClient, q, db); err == nil {
 			byteSlice, err := json.Marshal(response[0].Series)
+			k, _ := kazaam.NewKazaam(`[{"operation": "shift", "spec": {"object.id": "doc.uid",
+    "gid2": "doc.guid[1]",
+    "allGuids": "doc.guidObjects[*].id"}}]`)
+
 			if err != nil {
 				c.JSON(500, gin.H{
 					"Error": "Marshalling error",

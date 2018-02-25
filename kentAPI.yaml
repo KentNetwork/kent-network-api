@@ -1,0 +1,542 @@
+swagger: '2.0'
+info:
+  description: API interface for Kent.network
+  version: 0.0.1
+  title: Kent Network API
+  termsOfService: 'http://swagger.io/terms/'
+  contact:
+    email: mail@danielknox.co.uk
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+host: api.kent.network
+basePath: /v2
+tags:
+  - name: devices
+    description: Everything about devices
+    externalDocs:
+      description: Find out more
+      url: 'http://swagger.io'
+  - name: sensors
+    description: Everything about sensors
+  - name: data
+    description: All the readings
+schemes:
+  - http
+paths:
+  /devices:
+    get:
+      tags:
+        - devices
+      summary: All devices
+      operationId: getDevices
+      produces:
+        - application/json
+      parameters:
+        - name: catchmentID
+          in: query
+          description: Filter by ID of associated catchment area
+          required: false
+          type: string
+        - name: physicalID
+          in: query
+          description: Filter by ID of associated physical item
+          required: false
+          type: string
+        - name: status
+          in: query
+          description: Filter by device state
+          required: false
+          type: string
+        - name: town
+          in: query
+          description: Filter by town
+          required: false
+          type: string
+        - name: loc-lat
+          in: query
+          description: >-
+            Filter by location must be used together with `loc-lon` &
+            `loc-radius`
+          required: false
+          type: number
+          format: float
+        - name: loc-lon
+          in: query
+          description: >-
+            Filter by location must be used together with `loc-lat` &
+            `loc-radius`
+          required: false
+          type: number
+          format: float
+        - name: loc-radius
+          in: query
+          description: Filter by location must be used together with `loc-lat` & `loc-lon`
+          required: false
+          type: number
+          format: integer
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: object
+            properties:
+              meta:
+                $ref: '#/definitions/Meta'
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Device'
+        '400':
+          description: >-
+            Error: loc-lat,loc-lon,loc-radius mandatory if one of the fields is
+            defined
+  '/devices/{deviceId}':
+    get:
+      tags:
+        - devices
+      summary: A device
+      description: Returns a single device
+      operationId: getDeviceById
+      produces:
+        - application/json
+      parameters:
+        - name: deviceId
+          in: path
+          description: ID of device
+          required: true
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: object
+            properties:
+              meta:
+                $ref: '#/definitions/Meta'
+              items:
+                $ref: '#/definitions/Device'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Device not found
+  '/devices/{deviceId}/sensors':
+    get:
+      tags:
+        - devices
+      summary: All sensors for a device
+      description: Returns the sensors of a single device
+      operationId: getSensorsByDeviceId
+      produces:
+        - application/json
+      parameters:
+        - name: deviceId
+          in: path
+          description: ID of device
+          required: true
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: object
+            properties:
+              meta:
+                $ref: '#/definitions/Meta'
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Sensor'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Device not found
+  '/devices/{deviceId}/readings':
+    get:
+      tags:
+        - devices
+      summary: All readings for a device
+      description: Returns the readings for a device
+      operationId: getReadingsbyDeviceId
+      produces:
+        - application/json
+      security:
+        - api_key: []
+      parameters:
+        - name: deviceId
+          in: path
+          description: ID of device
+          required: true
+          type: string
+        - name: latest
+          in: query
+          description: Return latest reading
+          required: false
+          type: string
+        - name: today
+          in: query
+          description: Return readings for today
+          required: false
+          type: string
+        - name: date
+          in: query
+          description: Return readings for a date
+          required: false
+          type: string
+        - name: startdate
+          in: query
+          description: >-
+            Return readings from and to a date. Must be used together with
+            `endDate`
+          required: false
+          type: string
+        - name: endDate
+          in: query
+          description: >-
+            Return readings from and to a date. Must be used together with
+            `startDate`
+          required: false
+          type: string
+        - name: since
+          in: query
+          description: Return readings since a date
+          required: false
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: object
+            properties:
+              meta:
+                $ref: '#/definitions/Meta'
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Reading'
+        '400':
+          description: Invalid parameters
+        '404':
+          description: Measure not found
+  /sensors:
+    get:
+      tags:
+        - sensors
+      summary: All sensors for all devices
+      description: 'Gets the sensors, can be filtered'
+      operationId: findSensors
+      produces:
+        - application/json
+      parameters:
+        - name: deviceId
+          in: query
+          description: ID of device
+          required: false
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: object
+            properties:
+              meta:
+                $ref: '#/definitions/Meta'
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Sensor'
+        '400':
+          description: Invalid deviceId value
+  '/sensors/{sensorId}':
+    get:
+      tags:
+        - sensors
+      summary: A sensor
+      description: Returns a single sensor
+      operationId: getSensorById
+      produces:
+        - application/json
+      parameters:
+        - name: sensorId
+          in: path
+          description: ID of sensor
+          required: true
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: object
+            properties:
+              meta:
+                $ref: '#/definitions/Meta'
+              items:
+                $ref: '#/definitions/Sensor'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Sensor not found
+  '/sensors/{sensorId}/readings':
+    get:
+      tags:
+        - sensors
+      summary: All readings of a sensor
+      description: Returns the readings of a sensor
+      operationId: getReadingsbySensorId
+      produces:
+        - application/json
+      security:
+        - api_key: []
+      parameters:
+        - name: sensorId
+          in: path
+          description: ID of sensor
+          required: true
+          type: string
+        - name: latest
+          in: query
+          description: Return latest reading
+          required: false
+          type: string
+        - name: today
+          in: query
+          description: Return readings for today
+          required: false
+          type: string
+        - name: date
+          in: query
+          description: Return readings for a date
+          required: false
+          type: string
+        - name: startdate
+          in: query
+          description: >-
+            Return readings from and to a date. Must be used together with
+            `endDate`
+          required: false
+          type: string
+        - name: endDate
+          in: query
+          description: >-
+            Return readings from and to a date. Must be used together with
+            `startDate`
+          required: false
+          type: string
+        - name: since
+          in: query
+          description: Return readings since a date
+          required: false
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: object
+            properties:
+              meta:
+                $ref: '#/definitions/Meta'
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Reading'
+        '400':
+          description: Invalid parameters
+        '404':
+          description: Sensor not found
+  /data/readings:
+    get:
+      tags:
+        - data
+      summary: All readings for all sensors across all devices
+      description: Returns the readings of all sensors and devices
+      operationId: getReadings
+      produces:
+        - application/json
+      security:
+        - api_key: []
+      parameters:
+        - name: deviceId
+          in: query
+          description: Filter by device ID
+          required: false
+          type: string
+        - name: latest
+          in: query
+          description: Return latest reading
+          required: false
+          type: string
+        - name: today
+          in: query
+          description: Return readings for today
+          required: false
+          type: string
+        - name: date
+          in: query
+          description: Return readings for a date
+          required: false
+          type: string
+        - name: startdate
+          in: query
+          description: >-
+            Return readings from and to a date. Must be used together with
+            `endDate`
+          required: false
+          type: string
+        - name: endDate
+          in: query
+          description: >-
+            Return readings from and to a date. Must be used together with
+            `startDate`
+          required: false
+          type: string
+        - name: since
+          in: query
+          description: Return readings since a date
+          required: false
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: object
+            properties:
+              meta:
+                $ref: '#/definitions/Meta'
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Reading'
+        '400':
+          description: Invalid parameters
+        '404':
+          description: Device not found
+securityDefinitions:
+  api_key:
+    type: apiKey
+    name: api_key
+    in: header
+definitions:
+  Ttn:
+    type: object
+    properties:
+      app_id:
+        type: string
+      dev_id:
+        type: string
+      hardware_serial:
+        type: string
+  Status:
+    type: object
+    properties:
+      Type:
+        type: string
+        enum:
+          - unseen
+          - active
+          - decommisioned
+          - fault
+          - maintenance
+      Reason:
+        type: string
+      Date:
+        type: string
+  Location:
+    type: object
+    properties:
+      nearestTown:
+        type: string
+      catchmentName:
+        type: string
+      associatedWIth:
+        type: string
+      lat:
+        type: number
+        format: float
+      lon:
+        type: number
+        format: float
+      altitude:
+        type: number
+        format: integer
+      easting:
+        type: string
+      northing:
+        type: string
+  Sensor:
+    type: object
+    properties:
+      '@id':
+        type: string
+        description: URI of sensor
+      updateInterval:
+        type: number
+        format: integer
+      type:
+        type: string
+      unit:
+        type: string
+      maxOnRecord:
+        type: number
+        format: float
+      minOnRecord:
+        type: number
+        format: float
+      highestRecent:
+        type: number
+        format: float
+      typicalRangeLow:
+        type: number
+        format: float
+      typicalRangeHigh:
+        type: number
+        format: float
+  Meta:
+    type: object
+    properties:
+      publisher:
+        type: string
+      license:
+        type: string
+      version:
+        type: string
+      resultLimit:
+        type: integer
+        format: int64
+  Reading:
+    type: object
+    properties:
+      dateTime:
+        type: string
+      sensor:
+        type: string
+        description: URI of sensor
+      value:
+        type: number
+        format: float
+  Device:
+    type: object
+    properties:
+      '@id':
+        type: string
+        description: URI of device
+      friendlyName:
+        type: string
+      status:
+        type: array
+        items:
+          $ref: '#/definitions/Status'
+      ttn:
+        $ref: '#/definitions/Ttn'
+      location:
+        $ref: '#/definitions/Location'
+      sensors:
+        type: array
+        items:
+          $ref: '#/definitions/Sensor'
+      hardwareRef:
+        type: string
+      batteryType:
+        type: string
+externalDocs:
+  description: Link to usage guide
+  url: 'https://kent.network'
