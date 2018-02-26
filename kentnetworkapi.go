@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"strings"
@@ -11,11 +12,9 @@ import (
 )
 
 const (
-	influxHost       = "https://influxdb.kent.network"
 	influxUser       = "river"
 	influxPwd        = "NCQxM3Socdc2K4nEwS"
 	influxQueryLimit = 100
-	serverBind       = ":80"
 )
 
 // Meta - Most json responses contain a metadata object
@@ -96,7 +95,9 @@ type device struct {
 	BatteryType string   `json:"batteryType"`
 }
 
-var influxClient = influxDBClient()
+var influxClient client.Client
+var serverBind string
+var influxHost string
 
 var events = [...]string{
 	"Unseen",
@@ -269,17 +270,26 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	flag.StringVar(&influxHost, "influxserver", `https://influxdb.kent.network`, "Influx server to connect to.")
+	flag.StringVar(&serverBind, "bind", ":80", "Port Bind definition eg, \":80\"")
+
+	flag.Parse()
+	influxClient = influxDBClient()
+
 	r := setupRouter()
 	// Listen and Server in 0.0.0.0:80
 	r.Run(serverBind)
 }
 
 func influxDBClient() client.Client {
-	c, err := client.NewHTTPClient(client.HTTPConfig{
+	config := client.HTTPConfig{
 		Addr:     influxHost,
 		Username: influxUser,
-		Password: influxPwd,
-	})
+		Password: influxPwd}
+
+	c, err := client.NewHTTPClient(config)
 	if err != nil {
 		log.Fatalln("Error: ", err)
 	}
