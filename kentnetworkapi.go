@@ -15,6 +15,7 @@ const (
 	influxUser       = "river"
 	influxPwd        = "NCQxM3Socdc2K4nEwS"
 	influxQueryLimit = 100
+	serverBind	 = ":80"
 )
 
 type Meta struct {
@@ -262,7 +263,7 @@ func setupRouter() *gin.Engine {
 func main() {
 	r := setupRouter()
 	// Listen and Server in 0.0.0.0:80
-	r.Run(":80")
+	r.Run(serverBind)
 }
 
 func influxDBClient() client.Client {
