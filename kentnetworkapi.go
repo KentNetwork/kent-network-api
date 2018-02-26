@@ -17,7 +17,91 @@ const (
 	influxQueryLimit = 100
 )
 
+type Meta struct {
+	Publisher   string
+	License     string
+	Version     string
+	ResultLimit uint32
+}
+
+type Reading struct {
+	DateTime string
+	Sensor   string
+	Value    float32
+}
+
+type Sensor struct {
+	ID               string // URI of sensor
+	UpdateInterval   uint32
+	Value            float32
+	Type             string
+	Unit             string
+	MaxOnRecord      float32
+	MinOnRecord      float32
+	HighestRecent    float32
+	TypicalRangeLow  float32
+	TypicalRangeHigh float32
+}
+
+type EventType int
+
+const (
+	Unseen        EventType = iota + 1
+	Active        EventType = iota + 1
+	Decommisioned EventType = iota + 1
+	Fault         EventType = iota + 1
+	Maintenance   EventType = iota + 1
+)
+
+type Status struct {
+	Type   EventType
+	Reason string
+	Date   string
+}
+
+type Ttn struct {
+	AppID          string
+	DevID          string
+	HardwareSerial string
+}
+
+type Location struct {
+	NearestTown    string
+	CatchmentName  string
+	AssociatedWith string
+	Lat            float32
+	Lon            float32
+	Alititude      float32
+	Easting        string
+	Northing       string
+}
+
+type Device struct {
+	ID          string // URI of sensor
+	Type        string
+	Status      []Status
+	Location    Location
+	Ttn         Ttn
+	Lat         float32
+	HardwareRef string
+	BatteryType string
+}
+
 var influxClient = influxDBClient()
+
+var events = [...]string{
+	"Unseen",
+	"Active",
+	"Decommisioned",
+	"Fault",
+	"Maintenance",
+}
+
+// String() function will return the english name
+// that we want out constant events be recognized as
+func (event EventType) String() string {
+	return events[event-1]
+}
 
 func setupRouter() *gin.Engine {
 	// Disable Console Color
