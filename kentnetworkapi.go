@@ -24,32 +24,58 @@ func setupRouter() *gin.Engine {
 	// gin.DisableConsoleColor()
 	r := gin.Default()
 
-	// Return all devices
+	// All devices
 	r.GET("/devices", func(c *gin.Context) {
 		// catchmentName := c.Query("catchmentName")
 		// associatedWith := c.Query("associatedWith")
 		// status := c.Query("status")
 		// town := c.Query("town")
-		lat := c.Query("lat")
-		lon := c.Query("lon")
-		dist := c.Query("dist")
-		if !(((lat != "") && (lon != "") && (dist != "")) ||
-			((lat == "") && (lon == "") && (dist == ""))) {
-			c.String(400, "Error: lat,lon,dist mandatory if one of the fields is defined")
+		lat := c.Query("loc-lat")
+		lon := c.Query("loc-lon")
+		radius := c.Query("loc-radius")
+		if !(((lat != "") && (lon != "") && (radius != "")) ||
+			((lat == "") && (lon == "") && (radius == ""))) {
+			c.String(400, "Invalid parameters")
+			return
 		}
 		c.JSON(200, gin.H{
 			"message": "Here are all the devices",
 		})
 	})
 
-	// All sensors available from a particular device
+	// A device
+	r.GET("/devices/:deviceId", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Here is a device",
+		})
+	})
+
+	// All sensors for a device
 	r.GET("/devices/:deviceId/sensors", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Here are all the sensors for a device",
 		})
 	})
 
-	// Return all sensors
+	// Return all readings for a device
+	r.GET("/devices/:deviceId/readings", func(c *gin.Context) {
+		// latest := c.Query("latest")       // latest values
+		// today := c.Query("today")         // values for date
+		// date := c.Query("date")           //values on date
+		// since := c.Query("since")         // values since date
+		startDate := c.Query("startDate") // values from start_date until end_date
+		endDate := c.Query("endDate")     // values from start_date until end_date
+		if !(((startDate != "") && (endDate != "")) ||
+			((startDate == "") && (endDate == ""))) {
+			c.String(400, "Invalid parameters")
+			return
+		}
+		c.JSON(200, gin.H{
+			"message": "Here are all the readings for this device",
+		})
+	})
+
+	// All sensors for all devices
 	r.GET("/sensors", func(c *gin.Context) {
 		// deviceId := c.Query("deviceId")
 		c.JSON(200, gin.H{
@@ -57,7 +83,15 @@ func setupRouter() *gin.Engine {
 		})
 	})
 
-	// Return all readings for a particular sensor reference
+	// A sensor
+	r.GET("/sensors/:sensorId", func(c *gin.Context) {
+		// deviceId := c.Query("deviceId")
+		c.JSON(200, gin.H{
+			"message": "Here is a sensor",
+		})
+	})
+
+	// All readings of a sensor
 	r.GET("/sensors/:sensorId/readings", func(c *gin.Context) {
 
 		// latest := c.Query("latest")       // latest values
@@ -66,7 +100,7 @@ func setupRouter() *gin.Engine {
 		// since := c.Query("since")         // values since date
 		s := strings.Split(c.Param("sensorId"), "_")
 		if len(s) != 3 {
-			c.String(400, "Error: unknown sensorId")
+			c.String(404, "Sensor not found")
 			return
 		}
 		var db, measure string
@@ -76,7 +110,7 @@ func setupRouter() *gin.Engine {
 		case "A":
 			db = "air"
 		default:
-			c.String(400, "Error: unknown sensorId")
+			c.String(404, "Sensor not found")
 			return
 		}
 		switch s[1] {
@@ -85,7 +119,7 @@ func setupRouter() *gin.Engine {
 		case "F":
 			measure = "flow"
 		default:
-			c.String(400, "Error: unknown sensorId")
+			c.String(404, "Sensor not found")
 			return
 		}
 		sensorID := s[2]
@@ -93,7 +127,7 @@ func setupRouter() *gin.Engine {
 		endDate := c.Query("endDate")     // values from start_date until end_date
 		if !(((startDate != "") && (endDate != "")) ||
 			((startDate == "") && (endDate == ""))) {
-			c.String(400, "Error: start_date,end_date mandatory if one of the fields is defined")
+			c.String(400, "Invalid parameters")
 			return
 		}
 
@@ -120,24 +154,6 @@ func setupRouter() *gin.Engine {
 
 	})
 
-	// Return all readings for a particular sensor id
-	r.GET("/devices/:deviceId/readings", func(c *gin.Context) {
-		// latest := c.Query("latest")       // latest values
-		// today := c.Query("today")         // values for date
-		// date := c.Query("date")           //values on date
-		// since := c.Query("since")         // values since date
-		startDate := c.Query("startDate") // values from start_date until end_date
-		endDate := c.Query("endDate")     // values from start_date until end_date
-		if !(((startDate != "") && (endDate != "")) ||
-			((startDate == "") && (endDate == ""))) {
-			c.String(400, "Error: start_date,end_date mandatory if one of the fields is defined")
-			return
-		}
-		c.JSON(200, gin.H{
-			"message": "Here are all the readings for this device",
-		})
-	})
-
 	// Return all readings from all sensors
 	r.GET("/data/readings", func(c *gin.Context) {
 		// latest := c.Query("latest")       // latest values
@@ -148,7 +164,7 @@ func setupRouter() *gin.Engine {
 		endDate := c.Query("endDate")     // values from start_date until end_date
 		if !(((startDate != "") && (endDate != "")) ||
 			((startDate == "") && (endDate == ""))) {
-			c.String(400, "Error: start_date,end_date mandatory if one of the fields is defined")
+			c.String(400, "Invalid parameters")
 			return
 		}
 		c.JSON(200, gin.H{

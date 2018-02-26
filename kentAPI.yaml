@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  description: API interface for Kent.network
+  description: API interface for Kent.Network
   version: 0.0.1
   title: Kent Network API
   termsOfService: 'http://swagger.io/terms/'
@@ -89,8 +89,7 @@ paths:
                   $ref: '#/definitions/Device'
         '400':
           description: >-
-            Error: loc-lat,loc-lon,loc-radius mandatory if one of the fields is
-            defined
+            Invalid parameters
   '/devices/{deviceId}':
     get:
       tags:
@@ -217,7 +216,7 @@ paths:
         '400':
           description: Invalid parameters
         '404':
-          description: Measure not found
+          description: Sensor not found
   /sensors:
     get:
       tags:
@@ -308,7 +307,7 @@ paths:
           description: Return readings for a date
           required: false
           type: string
-        - name: startdate
+        - name: startDate
           in: query
           description: >-
             Return readings from and to a date. Must be used together with
