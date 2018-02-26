@@ -15,7 +15,7 @@ const (
 	influxUser       = "river"
 	influxPwd        = "NCQxM3Socdc2K4nEwS"
 	influxQueryLimit = 100
-	serverBind	 = ":80"
+	serverBind       = ":80"
 )
 
 // Meta - Most json responses contain a metadata object
