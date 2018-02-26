@@ -26,7 +26,7 @@ type Meta struct {
 
 type Reading struct {
 	DateTime string
-	Sensor   string
+	Sensor   string // URI of sensor
 	Value    float32
 }
 
@@ -77,7 +77,7 @@ type Location struct {
 }
 
 type Device struct {
-	ID          string // URI of sensor
+	ID          string // URI of device
 	Type        string
 	Status      []Status
 	Location    Location
