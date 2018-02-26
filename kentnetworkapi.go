@@ -19,31 +19,31 @@ const (
 
 // Meta - Most json responses contain a metadata object
 type meta struct {
-	Publisher   string
-	License     string
-	Version     string
-	ResultLimit uint32
+	Publisher   string `json:"publisher"`
+	License     string `json:"license"`
+	Version     string `json:"version"`
+	ResultLimit uint32 `json:"resultLimit"`
 }
 
 // Reading - A sensor takes readings which consists of a timestamp and values
 type reading struct {
-	DateTime string
-	Sensor   string // URI of sensor
-	Value    float32
+	DateTime string  `json:"dateTime"`
+	Sensor   string  `json:"sensor"` // URI of sensor
+	Value    float32 `json:"value"`
 }
 
 // Sensor - A device contains one or more sensors that can take readings
 type sensor struct {
-	ID               string // URI of sensor
-	UpdateInterval   uint32
-	Value            float32
-	Type             string
-	Unit             string
-	MaxOnRecord      float32
-	MinOnRecord      float32
-	HighestRecent    float32
-	TypicalRangeLow  float32
-	TypicalRangeHigh float32
+	ID               string  `json:"@id"` // URI of sensor
+	UpdateInterval   uint32  `json:"updateInterval"`
+	Value            float32 `json:"value"`
+	Type             string  `json:"type"`
+	Unit             string  `json:"unit"`
+	MaxOnRecord      float32 `json:"maxOnRecord"`
+	MinOnRecord      float32 `json:"minOnRecord"`
+	HighestRecent    float32 `json:"highestRecent"`
+	TypicalRangeLow  float32 `json:"typicalRangeLow"`
+	TypicalRangeHigh float32 `json:"typicalRangeHigh"`
 }
 
 // EventType - event type enum for device status
@@ -60,40 +60,39 @@ const (
 
 // Status - A device contains an array of different status events
 type status struct {
-	Type   eventType
-	Reason string
-	Date   string
+	Type     eventType `json:"type"`
+	Reason   string    `json:"reason"`
+	DateTime string    `json:"date"`
 }
 
 // Ttn - A device contains an object with things network metadata
 type ttn struct {
-	AppID          string
-	DevID          string
-	HardwareSerial string
+	AppID          string `json:"appId"`
+	DevID          string `json:"devId"`
+	HardwareSerial string `json:"hardwareSerial"`
 }
 
 // Location - A device contains an object with location metadata
 type location struct {
-	NearestTown    string
-	CatchmentName  string
-	AssociatedWith string
-	Lat            float32
-	Lon            float32
-	Alititude      float32
-	Easting        string
-	Northing       string
+	NearestTown    string  `json:"nearestTown"`
+	CatchmentName  string  `json:"catchmentName"`
+	AssociatedWith string  `json:"associatedWith"`
+	Lat            float32 `json:"lat"`
+	Lon            float32 `json:"lon"`
+	Altitude       float32 `json:"altitude"`
+	Easting        string  `json:"easting"`
+	Northing       string  `json:"northing"`
 }
 
 // Device represents a physical device
 type device struct {
-	ID          string // URI of device
-	Type        string
-	Status      []status
-	Location    location
-	Ttn         ttn
-	Lat         float32
-	HardwareRef string
-	BatteryType string
+	ID          string   `json:"@id"` // URI of device
+	Type        string   `json:"type"`
+	Status      []status `json:"status"`
+	Location    location `json:"location"`
+	Ttn         ttn      `json:"ttn"`
+	HardwareRef string   `json:"hardwareRef"`
+	BatteryType string   `json:"batteryType"`
 }
 
 var influxClient = influxDBClient()

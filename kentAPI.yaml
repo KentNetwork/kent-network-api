@@ -479,7 +479,7 @@ definitions:
         items:
             type: object
             properties:
-              'Type':
+              'type':
                 type: string
                 enum:
                   - unseen
@@ -487,9 +487,9 @@ definitions:
                   - decommisioned
                   - fault
                   - maintenance
-              Reason:
+              reason:
                 type: string
-              Date:
+              dateTime:
                 type: string
       ttn:
         type: object
