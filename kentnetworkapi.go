@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	client "github.com/influxdata/influxdb/client/v2"
-	"github.com/qntfy/kazaam"
 )
 
 const (
@@ -25,8 +24,8 @@ func setupRouter() *gin.Engine {
 	// gin.DisableConsoleColor()
 	r := gin.Default()
 
-	// Return all sensors
-	r.GET("/sensors", func(c *gin.Context) {
+	// Return all devices
+	r.GET("/devices", func(c *gin.Context) {
 		// catchmentName := c.Query("catchmentName")
 		// associatedWith := c.Query("associatedWith")
 		// status := c.Query("status")
@@ -39,35 +38,35 @@ func setupRouter() *gin.Engine {
 			c.String(400, "Error: lat,lon,dist mandatory if one of the fields is defined")
 		}
 		c.JSON(200, gin.H{
+			"message": "Here are all the devices",
+		})
+	})
+
+	// All sensors available from a particular device
+	r.GET("/devices/:deviceId/sensors", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Here are all the sensors for a device",
+		})
+	})
+
+	// Return all sensors
+	r.GET("/sensors", func(c *gin.Context) {
+		// deviceId := c.Query("deviceId")
+		c.JSON(200, gin.H{
 			"message": "Here are all the sensors",
 		})
 	})
 
-	// All measures available from a particular sensor
-	r.GET("/sensors/:sensorReference/measures", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Here are all the measures for a sensor",
-		})
-	})
-
-	// Return all measures
-	r.GET("/measures", func(c *gin.Context) {
-		// sensorReference := c.Query("sensorReference")
-		c.JSON(200, gin.H{
-			"message": "Here are all the measures",
-		})
-	})
-
-	// Return all readings for a particular measure reference
-	r.GET("/measures/:measurementReference/readings", func(c *gin.Context) {
+	// Return all readings for a particular sensor reference
+	r.GET("/sensors/:sensorId/readings", func(c *gin.Context) {
 
 		// latest := c.Query("latest")       // latest values
 		// today := c.Query("today")         // values for date
 		// date := c.Query("date")           //values on date
 		// since := c.Query("since")         // values since date
-		s := strings.Split(c.Param("measurementReference"), "_")
+		s := strings.Split(c.Param("sensorId"), "_")
 		if len(s) != 3 {
-			c.String(400, "Error: unknown measurementID")
+			c.String(400, "Error: unknown sensorId")
 			return
 		}
 		var db, measure string
@@ -77,7 +76,7 @@ func setupRouter() *gin.Engine {
 		case "A":
 			db = "air"
 		default:
-			c.String(400, "Error: unknown measurementID")
+			c.String(400, "Error: unknown sensorId")
 			return
 		}
 		switch s[1] {
@@ -86,7 +85,7 @@ func setupRouter() *gin.Engine {
 		case "F":
 			measure = "flow"
 		default:
-			c.String(400, "Error: unknown measurementID")
+			c.String(400, "Error: unknown sensorId")
 			return
 		}
 		sensorID := s[2]
@@ -102,9 +101,6 @@ func setupRouter() *gin.Engine {
 
 		if response, err := queryInfluxDB(influxClient, q, db); err == nil {
 			byteSlice, err := json.Marshal(response[0].Series)
-			k, _ := kazaam.NewKazaam(`[{"operation": "shift", "spec": {"object.id": "doc.uid",
-    "gid2": "doc.guid[1]",
-    "allGuids": "doc.guidObjects[*].id"}}]`)
 
 			if err != nil {
 				c.JSON(500, gin.H{
@@ -125,7 +121,7 @@ func setupRouter() *gin.Engine {
 	})
 
 	// Return all readings for a particular sensor id
-	r.GET("/sensors/:sensorReference/readings", func(c *gin.Context) {
+	r.GET("/devices/:deviceId/readings", func(c *gin.Context) {
 		// latest := c.Query("latest")       // latest values
 		// today := c.Query("today")         // values for date
 		// date := c.Query("date")           //values on date
@@ -138,7 +134,7 @@ func setupRouter() *gin.Engine {
 			return
 		}
 		c.JSON(200, gin.H{
-			"message": "Here are all the readings for this sensor",
+			"message": "Here are all the readings for this device",
 		})
 	})
 
@@ -156,7 +152,7 @@ func setupRouter() *gin.Engine {
 			return
 		}
 		c.JSON(200, gin.H{
-			"message": "Here is all the readings from all the sensors",
+			"message": "Here is all the readings from all the devices",
 		})
 	})
 
