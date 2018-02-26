@@ -17,6 +17,7 @@ const (
 	influxQueryLimit = 100
 )
 
+// Meta - Most json responses contains a metadata object
 type Meta struct {
 	Publisher   string
 	License     string
@@ -24,12 +25,14 @@ type Meta struct {
 	ResultLimit uint32
 }
 
+// Reading - A sensor takes readings which consists of a timestamp and values
 type Reading struct {
 	DateTime string
 	Sensor   string // URI of sensor
 	Value    float32
 }
 
+// Sensor - A device contains one or more sensors that can take readings
 type Sensor struct {
 	ID               string // URI of sensor
 	UpdateInterval   uint32
@@ -43,8 +46,10 @@ type Sensor struct {
 	TypicalRangeHigh float32
 }
 
+// EventType - event type enum for device status
 type EventType int
 
+// event type enum for device status
 const (
 	Unseen        EventType = iota + 1
 	Active        EventType = iota + 1
@@ -53,18 +58,21 @@ const (
 	Maintenance   EventType = iota + 1
 )
 
+// Status - A device contains an array of different status events
 type Status struct {
 	Type   EventType
 	Reason string
 	Date   string
 }
 
+// Ttn - A device contains an object with things network metadata
 type Ttn struct {
 	AppID          string
 	DevID          string
 	HardwareSerial string
 }
 
+// Location - A device contains an object with location metadata
 type Location struct {
 	NearestTown    string
 	CatchmentName  string
@@ -76,6 +84,7 @@ type Location struct {
 	Northing       string
 }
 
+// Device represents a physical device
 type Device struct {
 	ID          string // URI of device
 	Type        string
