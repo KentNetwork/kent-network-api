@@ -415,52 +415,6 @@ securityDefinitions:
     name: api_key
     in: header
 definitions:
-  Ttn:
-    type: object
-    properties:
-      app_id:
-        type: string
-      dev_id:
-        type: string
-      hardware_serial:
-        type: string
-  Status:
-    type: object
-    properties:
-      Type:
-        type: string
-        enum:
-          - unseen
-          - active
-          - decommisioned
-          - fault
-          - maintenance
-      Reason:
-        type: string
-      Date:
-        type: string
-  Location:
-    type: object
-    properties:
-      nearestTown:
-        type: string
-      catchmentName:
-        type: string
-      associatedWIth:
-        type: string
-      lat:
-        type: number
-        format: float
-      lon:
-        type: number
-        format: float
-      altitude:
-        type: number
-        format: integer
-      easting:
-        type: string
-      northing:
-        type: string
   Sensor:
     type: object
     properties:
@@ -523,11 +477,51 @@ definitions:
       status:
         type: array
         items:
-          $ref: '#/definitions/Status'
+            type: object
+            properties:
+              'Type':
+                type: string
+                enum:
+                  - unseen
+                  - active
+                  - decommisioned
+                  - fault
+                  - maintenance
+              Reason:
+                type: string
+              Date:
+                type: string
       ttn:
-        $ref: '#/definitions/Ttn'
+        type: object
+        properties:
+          app_id:
+            type: string
+          dev_id:
+            type: string
+          hardware_serial:
+            type: string
       location:
-        $ref: '#/definitions/Location'
+         type: object
+         properties:
+            nearestTown:
+              type: string
+            catchmentName:
+              type: string
+            associatedWIth:
+              type: string
+            lat:
+              type: number
+              format: float
+            lon:
+              type: number
+              format: float
+            altitude:
+              type: number
+              format: integer
+            easting:
+              type: string
+            northing:
+              type: string
       sensors:
         type: array
         items:
