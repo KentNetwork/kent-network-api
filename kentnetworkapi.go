@@ -17,8 +17,8 @@ const (
 	influxQueryLimit = 100
 )
 
-// Meta - Most json responses contains a metadata object
-type Meta struct {
+// Meta - Most json responses contain a metadata object
+type meta struct {
 	Publisher   string
 	License     string
 	Version     string
@@ -26,14 +26,14 @@ type Meta struct {
 }
 
 // Reading - A sensor takes readings which consists of a timestamp and values
-type Reading struct {
+type reading struct {
 	DateTime string
 	Sensor   string // URI of sensor
 	Value    float32
 }
 
 // Sensor - A device contains one or more sensors that can take readings
-type Sensor struct {
+type sensor struct {
 	ID               string // URI of sensor
 	UpdateInterval   uint32
 	Value            float32
@@ -47,33 +47,33 @@ type Sensor struct {
 }
 
 // EventType - event type enum for device status
-type EventType int
+type eventType int
 
 // event type enum for device status
 const (
-	Unseen        EventType = iota + 1
-	Active        EventType = iota + 1
-	Decommisioned EventType = iota + 1
-	Fault         EventType = iota + 1
-	Maintenance   EventType = iota + 1
+	Unseen        eventType = iota + 1
+	Active        eventType = iota + 1
+	Decommisioned eventType = iota + 1
+	Fault         eventType = iota + 1
+	Maintenance   eventType = iota + 1
 )
 
 // Status - A device contains an array of different status events
-type Status struct {
-	Type   EventType
+type status struct {
+	Type   eventType
 	Reason string
 	Date   string
 }
 
 // Ttn - A device contains an object with things network metadata
-type Ttn struct {
+type ttn struct {
 	AppID          string
 	DevID          string
 	HardwareSerial string
 }
 
 // Location - A device contains an object with location metadata
-type Location struct {
+type location struct {
 	NearestTown    string
 	CatchmentName  string
 	AssociatedWith string
@@ -85,12 +85,12 @@ type Location struct {
 }
 
 // Device represents a physical device
-type Device struct {
+type device struct {
 	ID          string // URI of device
 	Type        string
-	Status      []Status
-	Location    Location
-	Ttn         Ttn
+	Status      []status
+	Location    location
+	Ttn         ttn
 	Lat         float32
 	HardwareRef string
 	BatteryType string
@@ -108,7 +108,7 @@ var events = [...]string{
 
 // String() function will return the english name
 // that we want out constant events be recognized as
-func (event EventType) String() string {
+func (event eventType) String() string {
 	return events[event-1]
 }
 
