@@ -327,9 +327,9 @@ paths:
       security:
         - api_key: []
       parameters:
-        - name: deviceId
+        - name: parentDeviceId
           in: query
-          description: Filter by device ID
+          description: Filter for sensor by parent device ID
           required: false
           type: string
         - name: latest
@@ -394,10 +394,13 @@ definitions:
       '@id':
         type: string
         description: URI of sensor
+      parentDevice:
+        type: string
+        description: the ID of the parent device
       updateInterval:
         type: number
         format: integer
-      typeOfSensor:
+      sensorType:
         type: string
       unit:
         type: string
