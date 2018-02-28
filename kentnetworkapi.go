@@ -12,8 +12,6 @@ import (
 )
 
 const (
-	influxUser       = "river"
-	influxPwd        = "NCQxM3Socdc2K4nEwS"
 	influxQueryLimit = 100
 )
 
@@ -95,9 +93,14 @@ type device struct {
 	BatteryType string   `json:"batteryType"`
 }
 
-var influxClient client.Client
-var serverBind string
-var influxHost string
+type runtimeConfig struct {
+	influxUser string
+	influxPwd string
+	serverBind string
+	influxHost string
+}
+
+var	influxClient client.Client
 
 var events = [...]string{
 	"Unseen",
@@ -113,7 +116,7 @@ func (event eventType) String() string {
 	return events[event-1]
 }
 
-func setupRouter() *gin.Engine {
+func setupRouter(config runtimeConfig) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
@@ -270,30 +273,42 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	flag.StringVar(&influxHost, "influxserver", `https://influxdb.kent.network`, "Influx server to connect to.")
-	flag.StringVar(&serverBind, "bind", ":80", "Port Bind definition eg, \":80\"")
+	config := doFlags()
+	influxClient = influxDBClient(config)
 
-	flag.Parse()
-	influxClient = influxDBClient()
-
-	r := setupRouter()
+	r := setupRouter(config)
 	// Listen and Server in 0.0.0.0:80
-	r.Run(serverBind)
+	r.Run(config.serverBind)
 }
 
-func influxDBClient() client.Client {
-	config := client.HTTPConfig{
-		Addr:     influxHost,
-		Username: influxUser,
-		Password: influxPwd}
+func doFlags() (runtimeConfig) {
+	var config runtimeConfig
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	c, err := client.NewHTTPClient(config)
+	flag.StringVar(&config.influxHost, "influxserver", `https://influxdb.kent.network`, "Influx server to connect to.")
+	flag.StringVar(&config.influxUser, "influxuser", `river`, "Influx user to connect with.")
+	// TODO: Passwords shoudln't be read from command line when possible, as this leaves passwords in the shell history"
+	flag.StringVar(&config.influxPwd, "influxpwd", `NCQxM3Socdc2K4nEwS`, "Influx password user to connect with.")
+	flag.StringVar(&config.serverBind, "bind", ":80", "Port Bind definition eg, \":80\"")
+
+	flag.Parse()
+
+	return config
+
+}
+
+func influxDBClient(c runtimeConfig) client.Client {
+	config := client.HTTPConfig{
+		Addr:     c.influxHost,
+		Username: c.influxUser,
+		Password: c.influxPwd}
+
+	client, err := client.NewHTTPClient(config)
 	if err != nil {
 		log.Fatalln("Error: ", err)
 	}
-	return c
+	return client
 }
 
 // queryInfluxDB convenience function to query the influx database
