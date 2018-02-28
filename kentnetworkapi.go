@@ -95,12 +95,12 @@ type device struct {
 
 type runtimeConfig struct {
 	influxUser string
-	influxPwd string
+	influxPwd  string
 	serverBind string
 	influxHost string
 }
 
-var	influxClient client.Client
+var influxClient client.Client
 
 var events = [...]string{
 	"Unseen",
@@ -282,7 +282,7 @@ func main() {
 	r.Run(config.serverBind)
 }
 
-func doFlags() (runtimeConfig) {
+func doFlags() runtimeConfig {
 	var config runtimeConfig
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
