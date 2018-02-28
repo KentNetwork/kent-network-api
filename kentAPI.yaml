@@ -43,38 +43,11 @@ paths:
           description: Filter by ID of associated physical item
           required: false
           type: string
-        - name: status
+        - name: nearestTown
           in: query
-          description: Filter by device state
+          description: Filter by nearest town
           required: false
           type: string
-        - name: town
-          in: query
-          description: Filter by town
-          required: false
-          type: string
-        - name: loc-lat
-          in: query
-          description: >-
-            Filter by location must be used together with `loc-lon` &
-            `loc-radius`
-          required: false
-          type: number
-          format: float
-        - name: loc-lon
-          in: query
-          description: >-
-            Filter by location must be used together with `loc-lat` &
-            `loc-radius`
-          required: false
-          type: number
-          format: float
-        - name: loc-radius
-          in: query
-          description: Filter by location must be used together with `loc-lat` & `loc-lon`
-          required: false
-          type: number
-          format: integer
       responses:
         '200':
           description: successful operation
@@ -424,7 +397,7 @@ definitions:
       updateInterval:
         type: number
         format: integer
-      type:
+      typeOfSensor:
         type: string
       unit:
         type: string
@@ -505,9 +478,9 @@ definitions:
          properties:
             nearestTown:
               type: string
-            catchmentName:
+            catchmentID:
               type: string
-            associatedWIth:
+            physicalID:
               type: string
             lat:
               type: number
