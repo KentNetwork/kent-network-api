@@ -8,8 +8,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	testConfig = runtimeConfig{
+		influxUser: `river`,
+		influxPwd:  `NCQxM3Socdc2K4nEwS`,
+		serverBind: ":80",
+		influxHost: `https://influxdb.kent.network`,
+	}
+)
+
 func TestDevicesRoute(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/devices", nil)
@@ -20,7 +29,7 @@ func TestDevicesRoute(t *testing.T) {
 }
 
 func TestDevicesRouteMissingParamField(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/devices?loc-lat=51.23", nil)
@@ -31,7 +40,7 @@ func TestDevicesRouteMissingParamField(t *testing.T) {
 }
 
 func TestDeviceRoute(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/devices/test", nil)
@@ -42,7 +51,7 @@ func TestDeviceRoute(t *testing.T) {
 }
 
 func TestDeviceSensorsRoute(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/devices/boing/sensors", nil)
@@ -53,7 +62,7 @@ func TestDeviceSensorsRoute(t *testing.T) {
 }
 
 func TestDeviceReadingsRoute(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/devices/boing/readings", nil)
@@ -64,7 +73,7 @@ func TestDeviceReadingsRoute(t *testing.T) {
 }
 
 func TestDeviceReadingsRouteMissingParamField(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/devices/boing/readings?startDate=blah", nil)
@@ -75,7 +84,7 @@ func TestDeviceReadingsRouteMissingParamField(t *testing.T) {
 }
 
 func TestSensorsRoute(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/sensors", nil)
@@ -86,7 +95,7 @@ func TestSensorsRoute(t *testing.T) {
 }
 
 func TestSensorRoute(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/sensors/test", nil)
@@ -97,7 +106,7 @@ func TestSensorRoute(t *testing.T) {
 }
 
 func TestSensorReadingsRouteMissingParamField(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/sensors/R_T_test/readings?startDate=adate", nil)
@@ -108,7 +117,7 @@ func TestSensorReadingsRouteMissingParamField(t *testing.T) {
 }
 
 func TestSensorReadingsRouteBadSensorId(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/sensors/test/readings?startDate=adate", nil)
@@ -119,7 +128,7 @@ func TestSensorReadingsRouteBadSensorId(t *testing.T) {
 }
 
 func TestDataReadingsRoute(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/data/readings", nil)
@@ -130,7 +139,7 @@ func TestDataReadingsRoute(t *testing.T) {
 }
 
 func TestDataReadingsRouteMissingParamField(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/data/readings?startDate=adate", nil)
