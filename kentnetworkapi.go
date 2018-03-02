@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -162,7 +163,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 		db, err := couchClient.DB(context.TODO(), "kentnetwork")
 		if err != nil {
-			c.String(500, "Server Error")
+			c.String(500, "Internal server error")
 			return
 		}
 		row := db.Get(context.TODO(), c.Param("deviceId"))
@@ -180,15 +181,8 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 		var a okResponse
 		a.Device = returnedDevice
 		a.Meta = metaConsuctor(influxQueryLimit)
-		byteSlice, err := json.Marshal(a)
 
-		if err != nil {
-			c.String(500, "Internal server error")
-			return
-		}
-		c.Writer.Header().Set("Content-Type", "application/json")
-		c.Writer.WriteHeader(200)
-		c.Writer.Write(byteSlice)
+		c.JSON(http.StatusOK, a)
 
 	})
 
