@@ -1,11 +1,12 @@
 package main
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"net/http"
+	"net/http/httptest"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -18,68 +19,135 @@ var (
 	}
 )
 
-func TestDevicesRoute(t *testing.T) {
+func TestGetDevices(t *testing.T) {
 	router := setupRouter(testConfig)
+	Convey("Subject: Test device based routes", t, func() {
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/devices", nil)
-	router.ServeHTTP(w, req)
+		Convey("Test: /devices responds appropriately:", func() {
 
-	assert.Equal(t, 200, w.Code)
-	assert.JSONEq(t, `{"meta":{"publisher":"Kent Network","license":"Creative Commons","version":"0.1","resultLimit":0},"devices":[{"@id":"kent.network/devices/280bc7e6-5313-4764-880f-0b2131ce0589","location":{"nearestTown":"canterbury","catchmentName":"","associatedWith":"","lat":51.28325,"lon":1.080233,"altitude":10,"easting":"","northing":""},"ttn":{"appId":"","devId":"","hardwareSerial":""},"hardwareRef":"0.0.1","batteryType":"eneloop"},{"@id":"kent.network/devices/2cd66aaf-c920-4268-a5d9-7360a15877b6","location":{"nearestTown":"canterbury","catchmentName":"","associatedWith":"","lat":51.28325,"lon":1.080233,"altitude":10,"easting":"","northing":""},"ttn":{"appId":"","devId":"","hardwareSerial":""},"hardwareRef":"0.0.1","batteryType":"eneloop"},{"@id":"kent.network/devices/device:testsen1","location":{"nearestTown":"ashford","catchmentName":"","associatedWith":"","lat":0,"lon":0,"altitude":0,"easting":"","northing":""},"ttn":{"appId":"","devId":"","hardwareSerial":""},"hardwareRef":"0.0.1","batteryType":"eneloop"}]}`, w.Body.String())
-}
+			Convey("When a valid HTTP request is made to it", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/devices", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 200", nil)
+				So(w.Code, ShouldEqual, 200)
+			})
 
-func TestDeviceRoute(t *testing.T) {
-	router := setupRouter(testConfig)
+			Convey("When an internal server error occurs", func() {
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/devices/device:testsen1", nil)
-	router.ServeHTTP(w, req)
+				Convey("Then the response code should be 500", nil)
 
-	assert.Equal(t, 200, w.Code)
-	assert.JSONEq(t, `{"meta":{"publisher":"Kent Network","license":"Creative Commons","version":"0.1","resultLimit":0},"device":{"@id":"kent.network/devices/device:testsen1","type":"device","location":{"nearestTown":"ashford","catchmentName":"","associatedWith":"","lat":0,"lon":0,"altitude":0,"easting":"","northing":""},"ttn":{"appId":"","devId":"","hardwareSerial":""},"hardwareRef":"0.0.1","batteryType":"eneloop"}}`, w.Body.String())
-}
+				Convey("With the msg \"Internal server error\"", nil)
 
-func TestDeviceSensorsRoute(t *testing.T) {
-	router := setupRouter(testConfig)
+			})
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/devices/device:testsen1/sensors", nil)
-	router.ServeHTTP(w, req)
+		})
 
-	assert.Equal(t, 200, w.Code)
-	assert.JSONEq(t, `{"message": "{"meta":{"publisher":"Kent Network","license":"Creative Commons","version":"0.1","resultLimit":0},"sensors":[{"@id":"kent.network/sensors/device:testsen1:sensorid:2","updateInterval":10,"sensorType":"waterTemperature","unit":"c"}]}"}`, w.Body.String())
-}
+		Convey("Test: /devices/device_ID responds appropriately:", func() {
 
-func TestSensorsRoute(t *testing.T) {
-	router := setupRouter(testConfig)
+			Convey("When a valid HTTP request is made to it", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/devices/device:testsen1", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 200", nil)
+				So(w.Code, ShouldEqual, 200)
+			})
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/sensors", nil)
-	router.ServeHTTP(w, req)
+			Convey("When an invalid device_id is supplied", func() {
 
-	assert.Equal(t, 200, w.Code)
-	assert.JSONEq(t, `{"meta":{"publisher":"Kent Network","license":"Creative Commons","version":"0.1","resultLimit":0},"sensors":[{"@id":"kent.network/sensors/280bc7e6-5313-4764-880f-0b2131ce0589:01","updateInterval":15,"sensorType":"waterTemperature","unit":"c"},{"@id":"kent.network/sensors/2cd66aaf-c920-4268-a5d9-7360a15877b6:1","updateInterval":15,"sensorType":"waterTemperature","unit":"c"},{"@id":"kent.network/sensors/2cd66aaf-c920-4268-a5d9-7360a15877b6:2","updateInterval":15,"sensorType":"waterFlow","unit":"cfm"},{"@id":"kent.network/sensors/device:testsen1:sensorid:2","updateInterval":10,"sensorType":"waterTemperature","unit":"c"}]}`, w.Body.String())
-}
+				Convey("Then the response code should be 404", nil)
 
-func TestSensorRoute(t *testing.T) {
-	router := setupRouter(testConfig)
+				Convey("With the msg \"Device not found\"", nil)
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/sensors/device:testsen1:sensorid:2", nil)
-	router.ServeHTTP(w, req)
+			})
 
-	assert.Equal(t, 200, w.Code)
-	assert.JSONEq(t, `{"meta":{"publisher":"Kent Network","license":"Creative Commons","version":"0.1","resultLimit":0},"sensor":{"@id":"kent.network/sensors/device:testsen1:sensorid:2","updateInterval":10,"sensorType":"waterTemperature","unit":"c"}}`, w.Body.String())
-}
+			Convey("When an internal server error occurs", func() {
 
-func TestDataReadingsRoute(t *testing.T) {
-	router := setupRouter(testConfig)
+				Convey("Then the response code should be 500", nil)
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/data/readings", nil)
-	router.ServeHTTP(w, req)
+				Convey("With the msg \"Internal server error\"", nil)
 
-	assert.Equal(t, 200, w.Code)
-	assert.JSONEq(t, `{"message": "Here is all the readings from all the devices"}`, w.Body.String())
+			})
+
+		})
+
+		Convey("Test: /devices/device_ID/sensors responds appropiately:", func() {
+
+			Convey("When a valid HTTP request is made to it", func() {
+
+				Convey("Then the response code should be 200", nil)
+
+			})
+
+			Convey("When an invalid device_id is supplied", func() {
+
+				Convey("Then the response code should be 404", nil)
+
+				Convey("With the msg \"Device not found\"", nil)
+
+			})
+
+			Convey("When an internal server error occurs", func() {
+
+				Convey("Then the response code should be 500", nil)
+
+				Convey("With the msg \"Internal server error\"", nil)
+
+			})
+
+		})
+
+	})
+
+	Convey("Subject: Test sensor based routes", t, func() {
+
+		Convey("Test: /sensors responds appropriately:", func() {
+
+			Convey("When a valid HTTP request is made to it", func() {
+
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/sensors", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 200", nil)
+				So(w.Code, ShouldEqual, 200)
+
+			})
+
+			Convey("When an internal server error occurs", func() {
+
+				Convey("Then the response code should be 500", nil)
+
+				Convey("With the msg \"Internal server error\"", nil)
+
+			})
+
+		})
+
+		Convey("Test: /sensors/sensor_id responds appropriately:", func() {
+
+			Convey("When a valid HTTP request is made to it", func() {
+
+				Convey("Then the response code should be 200", nil)
+
+			})
+
+			Convey("When an invalid device_id is supplied", func() {
+
+				Convey("Then the response code should be 404", nil)
+
+				Convey("With the msg \"Device not found\"", nil)
+
+			})
+
+			Convey("When an internal server error occurs", func() {
+
+				Convey("Then the response code should be 500", nil)
+
+				Convey("With the msg \"Internal server error\"", nil)
+
+			})
+
+		})
+
+	})
 }

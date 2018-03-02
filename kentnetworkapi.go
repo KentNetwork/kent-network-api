@@ -37,7 +37,7 @@ type reading struct {
 type sensor struct {
 	ID             string `json:"@id"` // URI of sensor
 	UpdateInterval uint32 `json:"updateInterval"`
-	parentDevice   string `json:"parentDevice"`
+	ParentDevice   string `json:"parentDevice"`
 	SensorType     string `json:"sensorType"`
 	Unit           string `json:"unit"`
 }
@@ -485,6 +485,9 @@ func queryInfluxDB(clnt client.Client, cmd string, database string) (res []clien
 
 func queryCouchdb(request string) (code int, response []byte, err error) {
 	resp, err := http.Get(request)
+	if err != nil {
+		return 500, nil, err
+	}
 	defer resp.Body.Close()
 	response, err = ioutil.ReadAll(resp.Body)
 	code = resp.StatusCode

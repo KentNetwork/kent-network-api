@@ -60,6 +60,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/Device'
+        '500':
+          description: Internal server error
   '/devices/{deviceId}':
     get:
       tags:
