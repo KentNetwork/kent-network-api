@@ -1,17 +1,15 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-kivik/couchdb" // The CouchDB driver
-	"github.com/go-kivik/kivik"     // Development version of Kivik
 
 	client "github.com/influxdata/influxdb/client/v2"
 )
@@ -106,7 +104,6 @@ type runtimeConfig struct {
 }
 
 var influxClient client.Client
-var couchClient *kivik.Client
 
 var events = [...]string{
 	"Unseen",
@@ -162,21 +159,19 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 			Device device `json:"device"`
 		}
 
-		cCp := c.Copy()
-		db, err := couchClient.DB(cCp, "kentnetwork")
-		if err != nil {
-			log.Fatalln("Error: ", err)
+		code, resp, err := queryCouchdb(config.couchHost + "kentnetwork/" + c.Param("deviceId"))
+		if err != nil || code == 500 {
 			c.String(500, "Internal server error")
 			return
 		}
-		row := db.Get(context.TODO(), c.Param("deviceId"))
-		if err != nil {
+		if code == 404 {
 			c.String(404, "Device not found")
 			return
 		}
+
 		var returnedDevice device
-		if err = row.ScanDoc(&returnedDevice); err != nil {
-			c.String(404, "Device not found")
+		if err = json.Unmarshal(resp, &returnedDevice); err != nil {
+			c.String(500, "Internal server error")
 			return
 		}
 
@@ -197,6 +192,11 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 			Sensors []sensor `json:"device"`
 		}
 
+		code, resp, err := queryCouchdb(config.couchHost + "kentnetwork/_design/sensors/_view/getByDeviceID")
+		if (err != nil) || (code != 200) {
+
+		}
+		log.Println(resp)
 	})
 
 	// Return all readings for a device
@@ -321,12 +321,6 @@ func main() {
 
 	config := doFlags()
 	influxClient = influxDBClient(config)
-	var couchErr error
-	couchClient, couchErr = kivik.New(context.TODO(), "couch", config.couchHost)
-	if couchErr != nil {
-		panic(couchErr)
-	}
-
 	r := setupRouter(config)
 	// Listen and Server in 0.0.0.0:80
 	r.Run(config.serverBind)
@@ -377,4 +371,12 @@ func queryInfluxDB(clnt client.Client, cmd string, database string) (res []clien
 		return res, err
 	}
 	return res, nil
+}
+
+func queryCouchdb(request string) (code int, response []byte, err error) {
+	resp, err := http.Get(request)
+	defer resp.Body.Close()
+	response, err = ioutil.ReadAll(resp.Body)
+	code = resp.StatusCode
+	return code, response, err
 }
