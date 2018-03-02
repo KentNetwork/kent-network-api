@@ -32,22 +32,22 @@ paths:
       operationId: getDevices
       produces:
         - application/json
-      parameters:
-        - name: catchmentID
-          in: query
-          description: Filter by ID of associated catchment area
-          required: false
-          type: string
-        - name: physicalID
-          in: query
-          description: Filter by ID of associated physical item
-          required: false
-          type: string
-        - name: nearestTown
-          in: query
-          description: Filter by nearest town
-          required: false
-          type: string
+      # parameters:
+      #   - name: catchmentID
+      #     in: query
+      #     description: Filter by ID of associated catchment area
+      #     required: false
+      #     type: string
+      #   - name: physicalID
+      #     in: query
+      #     description: Filter by ID of associated physical item
+      #     required: false
+      #     type: string
+      #   - name: nearestTown
+      #     in: query
+      #     description: Filter by nearest town
+      #     required: false
+      #     type: string
       responses:
         '200':
           description: successful operation
@@ -60,9 +60,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/Device'
-        '400':
-          description: >-
-            Invalid parameters
   '/devices/{deviceId}':
     get:
       tags:
@@ -119,10 +116,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/Sensor'
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Device not found
   '/devices/{deviceId}/readings':
     get:
       tags:
@@ -189,7 +182,7 @@ paths:
         '400':
           description: Invalid parameters
         '404':
-          description: Sensor not found
+          description: Device not found
   /sensors:
     get:
       tags:
@@ -199,12 +192,6 @@ paths:
       operationId: findSensors
       produces:
         - application/json
-      parameters:
-        - name: deviceId
-          in: query
-          description: ID of device
-          required: false
-          type: string
       responses:
         '200':
           description: successful operation
@@ -217,8 +204,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/Sensor'
-        '400':
-          description: Invalid deviceId value
+        '500':
+          description: Internal server error
   '/sensors/{sensorId}':
     get:
       tags:
@@ -244,10 +231,10 @@ paths:
                 $ref: '#/definitions/Meta'
               items:
                 $ref: '#/definitions/Sensor'
-        '400':
-          description: Invalid ID supplied
         '404':
           description: Sensor not found
+        '500':
+          description: Internal server error
   '/sensors/{sensorId}/readings':
     get:
       tags:
@@ -404,21 +391,6 @@ definitions:
         type: string
       unit:
         type: string
-      maxOnRecord:
-        type: number
-        format: float
-      minOnRecord:
-        type: number
-        format: float
-      highestRecent:
-        type: number
-        format: float
-      typicalRangeLow:
-        type: number
-        format: float
-      typicalRangeHigh:
-        type: number
-        format: float
   Meta:
     type: object
     properties:
@@ -450,23 +422,6 @@ definitions:
         description: URI of device
       friendlyName:
         type: string
-      status:
-        type: array
-        items:
-            type: object
-            properties:
-              'type':
-                type: string
-                enum:
-                  - unseen
-                  - active
-                  - decommisioned
-                  - fault
-                  - maintenance
-              reason:
-                type: string
-              dateTime:
-                type: string
       ttn:
         type: object
         properties:
@@ -498,10 +453,6 @@ definitions:
               type: string
             northing:
               type: string
-      sensors:
-        type: array
-        items:
-          $ref: '#/definitions/Sensor'
       hardwareRef:
         type: string
       batteryType:

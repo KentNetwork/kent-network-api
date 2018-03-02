@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	influxQueryLimit = 100
+	resultLimit = 100
 )
 
 // Meta - Most json responses contain a metadata object
@@ -35,16 +35,11 @@ type reading struct {
 
 // Sensor - A device contains one or more sensors that can take readings
 type sensor struct {
-	ID               string  `json:"@id"` // URI of sensor
-	UpdateInterval   uint32  `json:"updateInterval"`
-	Value            float32 `json:"value"`
-	Type             string  `json:"type"`
-	Unit             string  `json:"unit"`
-	MaxOnRecord      float32 `json:"maxOnRecord"`
-	MinOnRecord      float32 `json:"minOnRecord"`
-	HighestRecent    float32 `json:"highestRecent"`
-	TypicalRangeLow  float32 `json:"typicalRangeLow"`
-	TypicalRangeHigh float32 `json:"typicalRangeHigh"`
+	ID             string `json:"@id"` // URI of sensor
+	UpdateInterval uint32 `json:"updateInterval"`
+	parentDevice   string `json:"parentDevice"`
+	SensorType     string `json:"sensorType"`
+	Unit           string `json:"unit"`
 }
 
 // EventType - event type enum for device status
@@ -88,7 +83,6 @@ type location struct {
 // Device represents a physical device
 type device struct {
 	ID          string   `json:"@id"` // URI of device
-	Type        string   `json:"type"`
 	Location    location `json:"location"`
 	Ttn         ttn      `json:"ttn"`
 	HardwareRef string   `json:"hardwareRef"`
@@ -138,17 +132,46 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 		// associatedWith := c.Query("associatedWith")
 		// status := c.Query("status")
 		// town := c.Query("town")
-		lat := c.Query("loc-lat")
-		lon := c.Query("loc-lon")
-		radius := c.Query("loc-radius")
-		if !(((lat != "") && (lon != "") && (radius != "")) ||
-			((lat == "") && (lon == "") && (radius == ""))) {
-			c.String(400, "Invalid parameters")
+		//lat := c.Query("loc-lat")
+		//lon := c.Query("loc-lon")
+		//radius := c.Query("loc-radius")
+
+		type okResponse struct {
+			Meta    meta     `json:"meta"`
+			Devices []device `json:"devices"`
+		}
+
+		type couchView struct {
+			TotalRows int `json:"total_rows"`
+			Offset    int `json:"offset"`
+			Rows      []struct {
+				ID     string      `json:"id"`
+				Key    interface{} `json:"key"`
+				Value  interface{} `json:"value"`
+				Device device      `json:"doc"`
+			} `json:"rows"`
+		}
+
+		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/devices/_view/getDevices?include_docs=true")
+		if err != nil && code != 200 {
+			c.String(500, "Internal server error")
 			return
 		}
-		c.JSON(200, gin.H{
-			"message": "Here are all the devices",
-		})
+
+		var couchResp couchView
+		if err = json.Unmarshal(resp, &couchResp); err != nil {
+			c.String(500, "Internal server error")
+			return
+		}
+
+		// Build OK response
+		var a okResponse
+		a.Meta = metaConsuctor(resultLimit)
+		for i := range couchResp.Rows {
+			a.Devices = append(a.Devices, couchResp.Rows[i].Device)
+		}
+
+		c.JSON(http.StatusOK, a)
 	})
 
 	// A device
@@ -178,7 +201,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 		// Build OK response
 		var a okResponse
 		a.Device = returnedDevice
-		a.Meta = metaConsuctor(influxQueryLimit)
+		a.Meta = metaConsuctor(resultLimit)
 
 		c.JSON(http.StatusOK, a)
 
@@ -189,14 +212,41 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 		type okResponse struct {
 			Meta    meta     `json:"meta"`
-			Sensors []sensor `json:"device"`
+			Sensors []sensor `json:"sensors"`
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "kentnetwork/_design/sensors/_view/getByDeviceID")
-		if (err != nil) || (code != 200) {
-
+		type couchView struct {
+			TotalRows int `json:"total_rows"`
+			Offset    int `json:"offset"`
+			Rows      []struct {
+				ID     string      `json:"id"`
+				Key    string      `json:"key"`
+				Value  interface{} `json:"value"`
+				Sensor sensor      `json:"doc"`
+			} `json:"rows"`
 		}
-		log.Println(resp)
+
+		code, resp, err := queryCouchdb(config.couchHost + "kentnetwork/_design/sensors/_view/getByDeviceID?include_docs=true&startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
+		if err != nil && code != 200 {
+			c.String(500, "Internal server error")
+			return
+		}
+
+		var couchResp couchView
+		if err = json.Unmarshal(resp, &couchResp); err != nil {
+			c.String(500, "Internal server error")
+			return
+		}
+
+		// Build OK response
+		var a okResponse
+		a.Meta = metaConsuctor(resultLimit)
+		for i := range couchResp.Rows {
+			a.Sensors = append(a.Sensors, couchResp.Rows[i].Sensor)
+		}
+
+		c.JSON(http.StatusOK, a)
+
 	})
 
 	// Return all readings for a device
@@ -219,18 +269,73 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 	// All sensors for all devices
 	r.GET("/sensors", func(c *gin.Context) {
-		// deviceId := c.Query("deviceId")
-		c.JSON(200, gin.H{
-			"message": "Here are all the sensors",
-		})
+		type okResponse struct {
+			Meta    meta     `json:"meta"`
+			Sensors []sensor `json:"sensors"`
+		}
+
+		type couchView struct {
+			TotalRows int `json:"total_rows"`
+			Offset    int `json:"offset"`
+			Rows      []struct {
+				ID     string      `json:"id"`
+				Key    interface{} `json:"key"`
+				Value  interface{} `json:"value"`
+				Sensor sensor      `json:"doc"`
+			} `json:"rows"`
+		}
+
+		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/sensors/_view/getSensors?include_docs=true")
+		if err != nil && code != 200 {
+			c.String(500, "Internal server error")
+			return
+		}
+
+		var couchResp couchView
+		if err = json.Unmarshal(resp, &couchResp); err != nil {
+			c.String(500, "Internal server error")
+			return
+		}
+
+		// Build OK response
+		var a okResponse
+		a.Meta = metaConsuctor(resultLimit)
+		for i := range couchResp.Rows {
+			a.Sensors = append(a.Sensors, couchResp.Rows[i].Sensor)
+		}
+
+		c.JSON(http.StatusOK, a)
 	})
 
 	// A sensor
 	r.GET("/sensors/:sensorId", func(c *gin.Context) {
-		// deviceId := c.Query("deviceId")
-		c.JSON(200, gin.H{
-			"message": "Here is a sensor",
-		})
+		type okResponse struct {
+			Meta   meta   `json:"meta"`
+			Sensor sensor `json:"sensor"`
+		}
+
+		code, resp, err := queryCouchdb(config.couchHost + "kentnetwork/" + c.Param("sensorId"))
+		if err != nil || code == 500 {
+			c.String(500, "Internal server error")
+			return
+		}
+		if code == 404 {
+			c.String(404, "Sensor not found")
+			return
+		}
+
+		var returnedSensor sensor
+		if err = json.Unmarshal(resp, &returnedSensor); err != nil {
+			c.String(500, "Internal server error")
+			return
+		}
+
+		// Build OK response
+		var a okResponse
+		a.Sensor = returnedSensor
+		a.Meta = metaConsuctor(resultLimit)
+
+		c.JSON(http.StatusOK, a)
 	})
 
 	// All readings of a sensor
