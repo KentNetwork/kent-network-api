@@ -156,12 +156,14 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 	// A device
 	r.GET("/devices/:deviceId", func(c *gin.Context) {
+
 		type okResponse struct {
 			Meta   meta   `json:"meta"`
 			Device device `json:"device"`
 		}
 
-		db, err := couchClient.DB(context.TODO(), "kentnetwork")
+		cCp := c.Copy()
+		db, err := couchClient.DB(cCp, "kentnetwork")
 		if err != nil {
 			log.Fatalln("Error: ", err)
 			c.String(500, "Internal server error")
@@ -189,9 +191,12 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 	// All sensors for a device
 	r.GET("/devices/:deviceId/sensors", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Here are all the sensors for a device",
-		})
+
+		type okResponse struct {
+			Meta    meta     `json:"meta"`
+			Sensors []sensor `json:"device"`
+		}
+
 	})
 
 	// Return all readings for a device
