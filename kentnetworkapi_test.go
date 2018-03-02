@@ -43,11 +43,11 @@ func TestDeviceRoute(t *testing.T) {
 	router := setupRouter(testConfig)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/devices/test", nil)
+	req, _ := http.NewRequest("GET", "/devices/device:testsen1", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
-	assert.JSONEq(t, `{"message": "Here is a device"}`, w.Body.String())
+	assert.JSONEq(t, `{"meta":{"publisher":"Kent Network","license":"Creative Commons","version":"0.1","resultLimit":0},"device":{"@id":"kent.network/devices/device:testsen1","type":"device","location":{"nearestTown":"ashford","catchmentName":"","associatedWith":"","lat":0,"lon":0,"altitude":0,"easting":"","northing":""},"ttn":{"appId":"","devId":"","hardwareSerial":""},"hardwareRef":"0.0.1","batteryType":"eneloop"}}`, w.Body.String())
 }
 
 func TestDeviceSensorsRoute(t *testing.T) {

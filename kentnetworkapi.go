@@ -101,6 +101,7 @@ type runtimeConfig struct {
 	influxPwd  string
 	serverBind string
 	influxHost string
+	couchHost  string
 }
 
 var influxClient client.Client
@@ -118,6 +119,14 @@ var events = [...]string{
 // that we want out constant events be recognized as
 func (event eventType) String() string {
 	return events[event-1]
+}
+
+func metaConsuctor(limit int) meta {
+	metaData := meta{}
+	metaData.License = "Creative Commons"
+	metaData.Publisher = "Kent Network"
+	metaData.Version = "0.1"
+	return metaData
 }
 
 func setupRouter(config runtimeConfig) *gin.Engine {
@@ -146,6 +155,11 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 	// A device
 	r.GET("/devices/:deviceId", func(c *gin.Context) {
+		type okResponse struct {
+			Meta   meta   `json:"meta"`
+			Device device `json:"device"`
+		}
+
 		db, err := couchClient.DB(context.TODO(), "kentnetwork")
 		if err != nil {
 			c.String(500, "Server Error")
@@ -156,15 +170,26 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 			c.String(404, "Device not found")
 			return
 		}
-		var aDevice device
-		if err = row.ScanDoc(&aDevice); err != nil {
+		var returnedDevice device
+		if err = row.ScanDoc(&returnedDevice); err != nil {
 			c.String(404, "Device not found")
 			return
 		}
 
-		c.JSON(200, gin.H{
-			"Device": aDevice.ID,
-		})
+		// Build OK response
+		var a okResponse
+		a.Device = returnedDevice
+		a.Meta = metaConsuctor(influxQueryLimit)
+		byteSlice, err := json.Marshal(a)
+
+		if err != nil {
+			c.String(500, "Internal server error")
+			return
+		}
+		c.Writer.Header().Set("Content-Type", "application/json")
+		c.Writer.WriteHeader(200)
+		c.Writer.Write(byteSlice)
+
 	})
 
 	// All sensors for a device
@@ -297,7 +322,7 @@ func main() {
 	config := doFlags()
 	influxClient = influxDBClient(config)
 	var couchErr error
-	couchClient, couchErr = kivik.New(context.TODO(), "couch", "https://couchdb.kent.network/")
+	couchClient, couchErr = kivik.New(context.TODO(), "couch", config.couchHost)
 	if couchErr != nil {
 		panic(couchErr)
 	}
@@ -316,6 +341,7 @@ func doFlags() runtimeConfig {
 	// TODO: Passwords shoudln't be read from command line when possible, as this leaves passwords in the shell history"
 	flag.StringVar(&config.influxPwd, "influxpwd", `NCQxM3Socdc2K4nEwS`, "Influx password user to connect with.")
 	flag.StringVar(&config.serverBind, "bind", ":80", "Port Bind definition eg, \":80\"")
+	flag.StringVar(&config.couchHost, "couchdbserver", `https://couchdb.kent.network/`, "Couchdb server to connect to.")
 
 	flag.Parse()
 
