@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -8,6 +9,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-kivik/couchdb" // The CouchDB driver
+	"github.com/go-kivik/kivik"     // Development version of Kivik
+
 	client "github.com/influxdata/influxdb/client/v2"
 )
 
@@ -86,7 +90,6 @@ type location struct {
 type device struct {
 	ID          string   `json:"@id"` // URI of device
 	Type        string   `json:"type"`
-	Status      []status `json:"status"`
 	Location    location `json:"location"`
 	Ttn         ttn      `json:"ttn"`
 	HardwareRef string   `json:"hardwareRef"`
@@ -101,6 +104,7 @@ type runtimeConfig struct {
 }
 
 var influxClient client.Client
+var couchClient *kivik.Client
 
 var events = [...]string{
 	"Unseen",
@@ -142,8 +146,24 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 	// A device
 	r.GET("/devices/:deviceId", func(c *gin.Context) {
+		db, err := couchClient.DB(context.TODO(), "kentnetwork")
+		if err != nil {
+			c.String(500, "Server Error")
+			return
+		}
+		row := db.Get(context.TODO(), c.Param("deviceId"))
+		if err != nil {
+			c.String(404, "Device not found")
+			return
+		}
+		var aDevice device
+		if err = row.ScanDoc(&aDevice); err != nil {
+			c.String(404, "Device not found")
+			return
+		}
+
 		c.JSON(200, gin.H{
-			"message": "Here is a device",
+			"Device": aDevice.ID,
 		})
 	})
 
@@ -276,6 +296,11 @@ func main() {
 
 	config := doFlags()
 	influxClient = influxDBClient(config)
+	var couchErr error
+	couchClient, couchErr = kivik.New(context.TODO(), "couch", "https://couchdb.kent.network/")
+	if couchErr != nil {
+		panic(couchErr)
+	}
 
 	r := setupRouter(config)
 	// Listen and Server in 0.0.0.0:80

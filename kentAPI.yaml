@@ -88,8 +88,8 @@ paths:
                 $ref: '#/definitions/Meta'
               items:
                 $ref: '#/definitions/Device'
-        '400':
-          description: Invalid ID supplied
+        '500':
+          description: Internal server error
         '404':
           description: Device not found
   '/devices/{deviceId}/sensors':
