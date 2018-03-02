@@ -116,6 +116,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/Sensor'
+        '404':
+          description: Device not found or device currently has no sensors
   '/devices/{deviceId}/readings':
     get:
       tags:

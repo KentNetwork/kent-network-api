@@ -238,6 +238,11 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 			return
 		}
 
+		if len(couchResp.Rows) == 0 {
+			c.String(404, "Device not found or device currently has no sensors")
+			return
+		}
+
 		// Build OK response
 		var a okResponse
 		a.Meta = metaConsuctor(resultLimit)
