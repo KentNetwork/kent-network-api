@@ -14,6 +14,7 @@ var (
 		influxPwd:  `NCQxM3Socdc2K4nEwS`,
 		serverBind: ":80",
 		influxHost: `https://influxdb.kent.network`,
+		couchHost:  `https://couchdb.kent.network`,
 	}
 )
 

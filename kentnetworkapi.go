@@ -163,6 +163,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 		db, err := couchClient.DB(context.TODO(), "kentnetwork")
 		if err != nil {
+			log.Fatalln("Error: ", err)
 			c.String(500, "Internal server error")
 			return
 		}
@@ -335,7 +336,7 @@ func doFlags() runtimeConfig {
 	// TODO: Passwords shoudln't be read from command line when possible, as this leaves passwords in the shell history"
 	flag.StringVar(&config.influxPwd, "influxpwd", `NCQxM3Socdc2K4nEwS`, "Influx password user to connect with.")
 	flag.StringVar(&config.serverBind, "bind", ":80", "Port Bind definition eg, \":80\"")
-	flag.StringVar(&config.couchHost, "couchdbserver", `https://couchdb.kent.network/`, "Couchdb server to connect to.")
+	flag.StringVar(&config.couchHost, "couchserver", `https://couchdb.kent.network/`, "Couchdb server to connect to.")
 
 	flag.Parse()
 
