@@ -2,14 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -122,6 +119,7 @@ func metaConsuctor(limit int) meta {
 	metaData.License = "Creative Commons"
 	metaData.Publisher = "Kent Network"
 	metaData.Version = "0.1"
+	metaData.ResultLimit = resultLimit
 	return metaData
 }
 
@@ -356,37 +354,24 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 			Readings []reading `json:"items"`
 		}
 
-		q := fmt.Sprintf("SELECT \"value\" FROM /.*/ WHERE (\"sensor_id\" = '%s') LIMIT %d ", c.Param("sensorId"), resultLimit)
+		readings, err := getSensorData(c.Param("sensorId"), config.influxDb)
 
-		if response, err := queryInfluxDB(influxClient, q, config.influxDb); err == nil {
-			if response[0].Series == nil {
-				c.String(404, "Sensor not found or sensor has no readings")
-				return
-			}
-
-			// Build OK response
-			var a okResponse
-			a.Meta = metaConsuctor(resultLimit)
-
-			for i := range response[0].Series[0].Values {
-				s, sErr := response[0].Series[0].Values[i][1].(json.Number).Float64()
-				t, tErr := time.Parse(time.RFC3339, response[0].Series[0].Values[i][0].(string))
-				if sErr == nil && tErr == nil {
-					var k reading
-					k.Sensor = c.Param("sensorId")
-					k.DateTime = t.Format("2006-01-02T15:04:05.999Z07:00")
-					k.Value = s
-					a.Readings = append(a.Readings, k)
-				} else {
-					c.String(500, "Internal server error")
-					return
-				}
-			}
-			c.JSON(http.StatusOK, a)
-		} else {
+		if err != nil {
 			c.String(500, "Internal server error")
 			return
 		}
+
+		if readings == nil {
+			c.String(404, "Sensor not found or sensor has no readings")
+			return
+		}
+
+		// Build OK response
+		var a okResponse
+		a.Meta = metaConsuctor(resultLimit)
+		a.Readings = readings
+		c.JSON(http.StatusOK, a)
+
 	})
 
 	// Return all readings from all sensors
@@ -482,39 +467,27 @@ func queryCouchdb(request string) (code int, response []byte, err error) {
 	return code, response, err
 }
 
-func getFloat(unk interface{}) (float64, error) {
-	switch i := unk.(type) {
-	case float64:
-		return float64(i), nil
-	case float32:
-		return float64(i), nil
-	case int64:
-		return float64(i), nil
-	case int32:
-		return float64(i), nil
-	case int16:
-		return float64(i), nil
-	case int8:
-		return float64(i), nil
-	case uint64:
-		return float64(i), nil
-	case uint32:
-		return float64(i), nil
-	case uint16:
-		return float64(i), nil
-	case uint8:
-		return float64(i), nil
-	case int:
-		return float64(i), nil
-	case uint:
-		return float64(i), nil
-	case string:
-		f, err := strconv.ParseFloat(i, 64)
-		if err != nil {
-			return math.NaN(), err
+func getSensorData(sensorID string, influxDb string) (readings []reading, err error) {
+
+	q := fmt.Sprintf("SELECT \"value\" FROM /.*/ WHERE (\"sensor_id\" = '%s') LIMIT %d ", sensorID, resultLimit)
+	var response []client.Result
+	if response, err = queryInfluxDB(influxClient, q, influxDb); err == nil {
+		if response[0].Series == nil {
+			return nil, nil
 		}
-		return f, err
-	default:
-		return math.NaN(), errors.New("getFloat: unknown value is of incompatible type")
+
+		for i := range response[0].Series[0].Values {
+			s, sErr := response[0].Series[0].Values[i][1].(json.Number).Float64()
+			t, tErr := time.Parse(time.RFC3339, response[0].Series[0].Values[i][0].(string))
+			if sErr == nil && tErr == nil {
+				var k reading
+				k.Sensor = sensorID
+				k.DateTime = t.Format("2006-01-02T15:04:05.999Z07:00")
+				k.Value = s
+				readings = append(readings, k)
+			}
+		}
+		return readings, nil
 	}
+	return readings, err
 }
