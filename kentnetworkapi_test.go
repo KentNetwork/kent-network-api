@@ -26,11 +26,7 @@ func TestGetDevices(t *testing.T) {
 		Convey("Test: /devices responds appropriately:", func() {
 
 			Convey("When a valid HTTP request is made to it", func() {
-				w := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/devices", nil)
-				router.ServeHTTP(w, req)
-				Convey("Then the response code should be 200", nil)
-				So(w.Code, ShouldEqual, 200)
+
 			})
 
 			Convey("When an internal server error occurs", func() {
@@ -104,7 +100,6 @@ func TestGetDevices(t *testing.T) {
 		Convey("Test: /sensors responds appropriately:", func() {
 
 			Convey("When a valid HTTP request is made to it", func() {
-
 				w := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/sensors", nil)
 				router.ServeHTTP(w, req)

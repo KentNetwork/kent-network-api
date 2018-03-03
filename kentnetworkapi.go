@@ -182,8 +182,9 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 			Device device `json:"device"`
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "kentnetwork/" + c.Param("deviceId"))
+		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/" + c.Param("deviceId"))
 		if err != nil || code == 500 {
+			log.Fatal(err)
 			c.String(500, "Internal server error")
 			return
 		}
@@ -226,7 +227,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 			} `json:"rows"`
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "kentnetwork/_design/sensors/_view/getByDeviceID?include_docs=true&startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
+		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?include_docs=true&startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
 		if err != nil && code != 200 {
 			c.String(500, "Internal server error")
 			return
@@ -319,7 +320,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 			Sensor sensor `json:"sensor"`
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "kentnetwork/" + c.Param("sensorId"))
+		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/" + c.Param("sensorId"))
 		if err != nil || code == 500 {
 			c.String(500, "Internal server error")
 			return
@@ -445,7 +446,7 @@ func doFlags() runtimeConfig {
 	// TODO: Passwords shoudln't be read from command line when possible, as this leaves passwords in the shell history"
 	flag.StringVar(&config.influxPwd, "influxpwd", `NCQxM3Socdc2K4nEwS`, "Influx password user to connect with.")
 	flag.StringVar(&config.serverBind, "bind", ":80", "Port Bind definition eg, \":80\"")
-	flag.StringVar(&config.couchHost, "couchserver", `https://couchdb.kent.network/`, "Couchdb server to connect to.")
+	flag.StringVar(&config.couchHost, "couchserver", `https://couchdb.kent.network`, "Couchdb server to connect to.")
 
 	flag.Parse()
 
