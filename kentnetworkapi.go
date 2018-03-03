@@ -361,7 +361,6 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 			c.JSON(http.StatusOK, response)
 		} else {
 			c.String(500, "Internal server error")
-			log.Fatal(err)
 			return
 		}
 
@@ -391,7 +390,11 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 func main() {
 
 	config := doFlags()
-	influxClient = influxDBClient(config)
+	var err error
+	influxClient, err = influxDBClient(config)
+	if err != nil {
+		log.Fatal(err)
+	}
 	r := setupRouter(config)
 	// Listen and Server in 0.0.0.0:80
 	r.Run(config.serverBind)
@@ -415,17 +418,14 @@ func doFlags() runtimeConfig {
 
 }
 
-func influxDBClient(c runtimeConfig) client.Client {
+func influxDBClient(c runtimeConfig) (client.Client, error) {
 	config := client.HTTPConfig{
 		Addr:     c.influxHost,
 		Username: c.influxUser,
 		Password: c.influxPwd}
 
 	client, err := client.NewHTTPClient(config)
-	if err != nil {
-		log.Fatalln("Error: ", err)
-	}
-	return client
+	return client, err
 }
 
 // queryInfluxDB convenience function to query the influx database
@@ -452,6 +452,9 @@ func queryCouchdb(request string) (code int, response []byte, err error) {
 	}
 	defer resp.Body.Close()
 	response, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 500, nil, err
+	}
 	code = resp.StatusCode
 	return code, response, err
 }

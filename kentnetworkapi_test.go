@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"testing"
 
 	"net/http"
@@ -19,8 +20,8 @@ var (
 		couchHost:  `https://couchdb.kent.network`,
 	}
 	badTestConfig = runtimeConfig{
-		influxUser: `badrobot`,
-		influxPwd:  `badpassword`,
+		influxUser: `reader`,
+		influxPwd:  `asij8X3rNU8U`,
 		influxDb:   `wrongdatabase`,
 		serverBind: ":80",
 		influxHost: `https://influxdb.kent.network`,
@@ -29,7 +30,11 @@ var (
 )
 
 func TestRoutes(t *testing.T) {
-	influxClient = influxDBClient(testConfig)
+	var err error
+	influxClient, err = influxDBClient(testConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
 	router := setupRouter(testConfig)
 	Convey("Subject: Test device based routes", t, func() {
 
@@ -231,10 +236,19 @@ func Test500Handling(t *testing.T) {
 		})
 
 		Convey("Test: /sensors/sensor_id/readings responds appropriately:", func() {
-			influxClient = influxDBClient(badTestConfig)
+			var err error
+			influxClient, err = influxDBClient(badTestConfig)
+			if err != nil {
+				log.Fatal(err)
+			}
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/sensors/device:testsen1:sensorid:2/readings", nil)
+			router.ServeHTTP(w, req)
 			Convey("When an internal server error occurs", func() {
 				Convey("Then the response code should be 500", nil)
+				So(w.Code, ShouldEqual, 500)
 				Convey("With the msg \"Internal server error\"", nil)
+				So(w.Body.String(), ShouldEqual, "Internal server error")
 			})
 
 		})
