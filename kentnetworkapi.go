@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -92,6 +91,7 @@ type device struct {
 type runtimeConfig struct {
 	influxUser string
 	influxPwd  string
+	influxDb   string
 	serverBind string
 	influxHost string
 	couchHost  string
@@ -184,7 +184,6 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/" + c.Param("deviceId"))
 		if err != nil || code == 500 {
-			log.Fatal(err)
 			c.String(500, "Internal server error")
 			return
 		}
@@ -261,13 +260,14 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 		// today := c.Query("today")         // values for date
 		// date := c.Query("date")           //values on date
 		// since := c.Query("since")         // values since date
-		startDate := c.Query("startDate") // values from start_date until end_date
-		endDate := c.Query("endDate")     // values from start_date until end_date
-		if !(((startDate != "") && (endDate != "")) ||
-			((startDate == "") && (endDate == ""))) {
-			c.String(400, "Invalid parameters")
-			return
-		}
+		// startDate := c.Query("startDate") // values from start_date until end_date
+		// endDate := c.Query("endDate")     // values from start_date until end_date
+		// if !(((startDate != "") && (endDate != "")) ||
+		// 	((startDate == "") && (endDate == ""))) {
+		// 	c.String(400, "Invalid parameters")
+		// 	return
+		// }
+
 		c.JSON(200, gin.H{
 			"message": "Here are all the readings for this device",
 		})
@@ -321,8 +321,12 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 		}
 
 		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/" + c.Param("sensorId"))
-		if err != nil || code == 500 {
+		if err != nil {
 			c.String(500, "Internal server error")
+			return
+		}
+		if code == 500 {
+			c.String(404, "Internal server error")
 			return
 		}
 		if code == 404 {
@@ -347,61 +351,17 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 	// All readings of a sensor
 	r.GET("/sensors/:sensorId/readings", func(c *gin.Context) {
 
-		// latest := c.Query("latest")       // latest values
-		// today := c.Query("today")         // values for date
-		// date := c.Query("date")           //values on date
-		// since := c.Query("since")         // values since date
-		s := strings.Split(c.Param("sensorId"), "_")
-		if len(s) != 3 {
-			c.String(404, "Sensor not found")
-			return
-		}
-		var db, measure string
-		switch s[0] {
-		case "R":
-			db = "rivers"
-		case "A":
-			db = "air"
-		default:
-			c.String(404, "Sensor not found")
-			return
-		}
-		switch s[1] {
-		case "T":
-			measure = "temperature"
-		case "F":
-			measure = "flow"
-		default:
-			c.String(404, "Sensor not found")
-			return
-		}
-		sensorID := s[2]
-		startDate := c.Query("startDate") // values from start_date until end_date
-		endDate := c.Query("endDate")     // values from start_date until end_date
-		if !(((startDate != "") && (endDate != "")) ||
-			((startDate == "") && (endDate == ""))) {
-			c.String(400, "Invalid parameters")
-			return
-		}
+		q := fmt.Sprintf("SELECT \"value\" FROM /.*/ WHERE (\"sensor_id\" = '%s') LIMIT %d ", c.Param("sensorId"), resultLimit)
 
-		q := fmt.Sprintf("SELECT \"value\" FROM %s WHERE (\"sensor_id\" = '%s') LIMIT %d ", measure, sensorID, 100)
-
-		if response, err := queryInfluxDB(influxClient, q, db); err == nil {
-			byteSlice, err := json.Marshal(response[0].Series)
-
-			if err != nil {
-				c.JSON(500, gin.H{
-					"Error": "Marshalling error",
-				})
+		if response, err := queryInfluxDB(influxClient, q, config.influxDb); err == nil {
+			if response[0].Series == nil {
+				c.String(404, "Sensor not found or sensor has no readings")
 				return
 			}
-			c.Writer.Header().Set("Content-Type", "application/json")
-			c.Writer.WriteHeader(200)
-			c.Writer.Write(byteSlice)
+			c.JSON(http.StatusOK, response)
 		} else {
-			c.JSON(500, gin.H{
-				"Error": "Database Query Error",
-			})
+			c.String(500, "Internal server error")
+			log.Fatal(err)
 			return
 		}
 
@@ -442,9 +402,10 @@ func doFlags() runtimeConfig {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	flag.StringVar(&config.influxHost, "influxserver", `https://influxdb.kent.network`, "Influx server to connect to.")
-	flag.StringVar(&config.influxUser, "influxuser", `river`, "Influx user to connect with.")
+	flag.StringVar(&config.influxUser, "influxuser", `reader`, "Influx user to connect with.")
 	// TODO: Passwords shoudln't be read from command line when possible, as this leaves passwords in the shell history"
-	flag.StringVar(&config.influxPwd, "influxpwd", `NCQxM3Socdc2K4nEwS`, "Influx password user to connect with.")
+	flag.StringVar(&config.influxPwd, "influxpwd", `asij8X3rNU8U`, "Influx password user to connect with.")
+	flag.StringVar(&config.influxDb, "influxdb", `readings`, "Influx database to use.")
 	flag.StringVar(&config.serverBind, "bind", ":80", "Port Bind definition eg, \":80\"")
 	flag.StringVar(&config.couchHost, "couchserver", `https://couchdb.kent.network`, "Couchdb server to connect to.")
 

@@ -302,10 +302,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/Reading'
-        '400':
-          description: Invalid parameters
         '404':
-          description: Sensor not found
+          description: Sensor not found or sensor has no readings
+        '500':
+            description: Internal server error
   /data/readings:
     get:
       tags:

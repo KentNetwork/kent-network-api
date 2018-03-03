@@ -11,15 +11,25 @@ import (
 
 var (
 	testConfig = runtimeConfig{
-		influxUser: `river`,
-		influxPwd:  `NCQxM3Socdc2K4nEwS`,
+		influxUser: `reader`,
+		influxPwd:  `asij8X3rNU8U`,
+		influxDb:   `readings`,
 		serverBind: ":80",
 		influxHost: `https://influxdb.kent.network`,
 		couchHost:  `https://couchdb.kent.network`,
 	}
+	badTestConfig = runtimeConfig{
+		influxUser: `badrobot`,
+		influxPwd:  `badpassword`,
+		influxDb:   `wrongdatabase`,
+		serverBind: ":80",
+		influxHost: `https://influxdb.kent.network`,
+		couchHost:  `https://couchdb.badrobot.network`,
+	}
 )
 
-func TestGetDevices(t *testing.T) {
+func TestRoutes(t *testing.T) {
+	influxClient = influxDBClient(testConfig)
 	router := setupRouter(testConfig)
 	Convey("Subject: Test device based routes", t, func() {
 
@@ -31,12 +41,6 @@ func TestGetDevices(t *testing.T) {
 				router.ServeHTTP(w, req)
 				Convey("Then the response code should be 200", nil)
 				So(w.Code, ShouldEqual, 200)
-			})
-
-			Convey("When an internal server error occurs", func() {
-				Convey("Then the response code should be 500", nil)
-				Convey("With the msg \"Internal server error\"", nil)
-
 			})
 
 		})
@@ -61,14 +65,6 @@ func TestGetDevices(t *testing.T) {
 				So(w.Body.String(), ShouldEqual, "Device not found")
 			})
 
-			Convey("When an internal server error occurs", func() {
-
-				Convey("Then the response code should be 500", nil)
-
-				Convey("With the msg \"Internal server error\"", nil)
-
-			})
-
 		})
 
 		Convey("Test: /devices/device_ID/sensors responds appropiately:", func() {
@@ -91,14 +87,6 @@ func TestGetDevices(t *testing.T) {
 				So(w.Body.String(), ShouldEqual, "Device not found or device currently has no sensors")
 			})
 
-			Convey("When an internal server error occurs", func() {
-
-				Convey("Then the response code should be 500", nil)
-
-				Convey("With the msg \"Internal server error\"", nil)
-
-			})
-
 		})
 
 	})
@@ -113,14 +101,6 @@ func TestGetDevices(t *testing.T) {
 				router.ServeHTTP(w, req)
 				Convey("Then the response code should be 200", nil)
 				So(w.Code, ShouldEqual, 200)
-			})
-
-			Convey("When an internal server error occurs", func() {
-
-				Convey("Then the response code should be 500", nil)
-
-				Convey("With the msg \"Internal server error\"", nil)
-
 			})
 
 		})
@@ -145,12 +125,116 @@ func TestGetDevices(t *testing.T) {
 				So(w.Body.String(), ShouldEqual, "Sensor not found")
 			})
 
+		})
+
+		Convey("Test: /sensors/sensor_id/readings responds appropriately:", func() {
+
+			Convey("When a valid HTTP request is made to it", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/sensors/device:testsen1:sensorid:2/readings", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 200", nil)
+				So(w.Code, ShouldEqual, 200)
+			})
+
+			Convey("When an invalid device_id is supplied", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/sensors/badrobot/readings", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 404", nil)
+				So(w.Code, ShouldEqual, 404)
+				Convey("With the msg \"Device not found\"", nil)
+				So(w.Body.String(), ShouldEqual, "Sensor not found or sensor has no readings")
+			})
+
+		})
+
+	})
+}
+
+func Test500Handling(t *testing.T) {
+	router := setupRouter(badTestConfig)
+	Convey("Subject: Test device based routes", t, func() {
+
+		Convey("Test: /devices responds appropriately:", func() {
+
 			Convey("When an internal server error occurs", func() {
-
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/devices", nil)
+				router.ServeHTTP(w, req)
 				Convey("Then the response code should be 500", nil)
-
+				So(w.Code, ShouldEqual, 500)
 				Convey("With the msg \"Internal server error\"", nil)
+				So(w.Body.String(), ShouldEqual, "Internal server error")
+			})
 
+		})
+
+		Convey("Test: /devices/device_ID responds appropriately:", func() {
+
+			Convey("When an internal server error occurs", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/devices/device:testsen1", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 500", nil)
+				So(w.Code, ShouldEqual, 500)
+				Convey("With the msg \"Internal server error\"", nil)
+				So(w.Body.String(), ShouldEqual, "Internal server error")
+			})
+
+		})
+
+		Convey("Test: /devices/device_ID/sensors responds appropiately:", func() {
+
+			Convey("When an internal server error occurs", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/devices/testsen1/sensors", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 500", nil)
+				So(w.Code, ShouldEqual, 500)
+				Convey("With the msg \"Internal server error\"", nil)
+				So(w.Body.String(), ShouldEqual, "Internal server error")
+			})
+
+		})
+
+	})
+
+	Convey("Subject: Test sensor based routes", t, func() {
+
+		Convey("Test: /sensors responds appropriately:", func() {
+
+			Convey("When an internal server error occurs", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/sensors", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 500", nil)
+				So(w.Code, ShouldEqual, 500)
+				Convey("With the msg \"Internal server error\"", nil)
+				So(w.Body.String(), ShouldEqual, "Internal server error")
+			})
+
+		})
+
+		Convey("Test: /sensors/sensor_id responds appropriately:", func() {
+
+			Convey("When an internal server error occurs", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/sensors/device:testsen1:sensorid:2", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 500", nil)
+				So(w.Code, ShouldEqual, 500)
+				Convey("With the msg \"Internal server error\"", nil)
+				So(w.Body.String(), ShouldEqual, "Internal server error")
+			})
+
+		})
+
+		Convey("Test: /sensors/sensor_id/readings responds appropriately:", func() {
+			influxClient = influxDBClient(badTestConfig)
+			Convey("When an internal server error occurs", func() {
+				Convey("Then the response code should be 500", nil)
+				Convey("With the msg \"Internal server error\"", nil)
 			})
 
 		})
