@@ -2,11 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -29,7 +33,7 @@ type meta struct {
 type reading struct {
 	DateTime string  `json:"dateTime"`
 	Sensor   string  `json:"sensor"` // URI of sensor
-	Value    float32 `json:"value"`
+	Value    float64 `json:"value"`
 }
 
 // Sensor - A device contains one or more sensors that can take readings
@@ -138,7 +142,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 		type okResponse struct {
 			Meta    meta     `json:"meta"`
-			Devices []device `json:"devices"`
+			Devices []device `json:"items"`
 		}
 
 		type couchView struct {
@@ -179,7 +183,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 		type okResponse struct {
 			Meta   meta   `json:"meta"`
-			Device device `json:"device"`
+			Device device `json:"items"`
 		}
 
 		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/" + c.Param("deviceId"))
@@ -212,7 +216,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 		type okResponse struct {
 			Meta    meta     `json:"meta"`
-			Sensors []sensor `json:"sensors"`
+			Sensors []sensor `json:"items"`
 		}
 
 		type couchView struct {
@@ -277,7 +281,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 	r.GET("/sensors", func(c *gin.Context) {
 		type okResponse struct {
 			Meta    meta     `json:"meta"`
-			Sensors []sensor `json:"sensors"`
+			Sensors []sensor `json:"items"`
 		}
 
 		type couchView struct {
@@ -317,7 +321,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 	r.GET("/sensors/:sensorId", func(c *gin.Context) {
 		type okResponse struct {
 			Meta   meta   `json:"meta"`
-			Sensor sensor `json:"sensor"`
+			Sensor sensor `json:"items"`
 		}
 
 		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/" + c.Param("sensorId"))
@@ -347,6 +351,10 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 	// All readings of a sensor
 	r.GET("/sensors/:sensorId/readings", func(c *gin.Context) {
+		type okResponse struct {
+			Meta     meta      `json:"meta"`
+			Readings []reading `json:"items"`
+		}
 
 		q := fmt.Sprintf("SELECT \"value\" FROM /.*/ WHERE (\"sensor_id\" = '%s') LIMIT %d ", c.Param("sensorId"), resultLimit)
 
@@ -355,12 +363,30 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 				c.String(404, "Sensor not found or sensor has no readings")
 				return
 			}
-			c.JSON(http.StatusOK, response)
+
+			// Build OK response
+			var a okResponse
+			a.Meta = metaConsuctor(resultLimit)
+
+			for i := range response[0].Series[0].Values {
+				s, sErr := response[0].Series[0].Values[i][1].(json.Number).Float64()
+				t, tErr := time.Parse(time.RFC3339, response[0].Series[0].Values[i][0].(string))
+				if sErr == nil && tErr == nil {
+					var k reading
+					k.Sensor = c.Param("sensorId")
+					k.DateTime = t.Format("2006-01-02T15:04:05.999Z07:00")
+					k.Value = s
+					a.Readings = append(a.Readings, k)
+				} else {
+					c.String(500, "Internal server error")
+					return
+				}
+			}
+			c.JSON(http.StatusOK, a)
 		} else {
 			c.String(500, "Internal server error")
 			return
 		}
-
 	})
 
 	// Return all readings from all sensors
@@ -454,4 +480,41 @@ func queryCouchdb(request string) (code int, response []byte, err error) {
 	}
 	code = resp.StatusCode
 	return code, response, err
+}
+
+func getFloat(unk interface{}) (float64, error) {
+	switch i := unk.(type) {
+	case float64:
+		return float64(i), nil
+	case float32:
+		return float64(i), nil
+	case int64:
+		return float64(i), nil
+	case int32:
+		return float64(i), nil
+	case int16:
+		return float64(i), nil
+	case int8:
+		return float64(i), nil
+	case uint64:
+		return float64(i), nil
+	case uint32:
+		return float64(i), nil
+	case uint16:
+		return float64(i), nil
+	case uint8:
+		return float64(i), nil
+	case int:
+		return float64(i), nil
+	case uint:
+		return float64(i), nil
+	case string:
+		f, err := strconv.ParseFloat(i, 64)
+		if err != nil {
+			return math.NaN(), err
+		}
+		return f, err
+	default:
+		return math.NaN(), errors.New("getFloat: unknown value is of incompatible type")
+	}
 }
