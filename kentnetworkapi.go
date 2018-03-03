@@ -321,14 +321,11 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 		}
 
 		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/" + c.Param("sensorId"))
-		if err != nil {
+		if err != nil || code == 500 {
 			c.String(500, "Internal server error")
 			return
 		}
-		if code == 500 {
-			c.String(404, "Internal server error")
-			return
-		}
+
 		if code == 404 {
 			c.String(404, "Sensor not found")
 			return
