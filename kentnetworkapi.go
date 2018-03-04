@@ -269,10 +269,52 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 		// 	c.String(400, "Invalid parameters")
 		// 	return
 		// }
+		type okResponse struct {
+			Meta     meta      `json:"meta"`
+			Readings []reading `json:"items"`
+		}
 
-		c.JSON(200, gin.H{
-			"message": "Here are all the readings for this device",
-		})
+		type couchView struct {
+			TotalRows int `json:"total_rows"`
+			Offset    int `json:"offset"`
+			Rows      []struct {
+				ID    string      `json:"id"`
+				Key   string      `json:"key"`
+				Value interface{} `json:"value"`
+			} `json:"rows"`
+		}
+
+		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
+		if err != nil && code != 200 {
+			c.String(500, "Internal server error")
+			return
+		}
+
+		var couchResp couchView
+		if err = json.Unmarshal(resp, &couchResp); err != nil {
+			c.String(500, "Internal server error")
+			return
+		}
+
+		if len(couchResp.Rows) == 0 {
+			c.String(404, "Device not found or device has sensors with no readings")
+			return
+		}
+
+		// Build OK response
+		var a okResponse
+		a.Meta = metaConsuctor(resultLimit)
+
+		for i := range couchResp.Rows {
+			readings, err := getSensorData(couchResp.Rows[i].ID, config.influxDb)
+			if err == nil && readings != nil {
+				for i := range readings {
+					a.Readings = append(a.Readings, readings[i])
+				}
+			}
+		}
+
+		c.JSON(http.StatusOK, a)
 	})
 
 	// All sensors for all devices

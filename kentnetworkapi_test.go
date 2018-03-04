@@ -94,6 +94,27 @@ func TestRoutes(t *testing.T) {
 
 		})
 
+		Convey("Test: /devices/device_ID/readings responds appropiately:", func() {
+
+			Convey("When a valid HTTP request is made to it", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/devices/device:testsen1/readings", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 200", nil)
+				So(w.Code, ShouldEqual, 200)
+			})
+
+			Convey("When an invalid device_id is supplied", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/devices/badrobot/readings", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 404", nil)
+				So(w.Code, ShouldEqual, 404)
+				Convey("With the msg \"Device not found...\"", nil)
+				So(w.Body.String(), ShouldEqual, "Device not found or device has sensors with no readings")
+			})
+
+		})
 	})
 
 	Convey("Subject: Test sensor based routes", t, func() {
@@ -194,6 +215,20 @@ func Test500Handling(t *testing.T) {
 			Convey("When an internal server error occurs", func() {
 				w := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/devices/testsen1/sensors", nil)
+				router.ServeHTTP(w, req)
+				Convey("Then the response code should be 500", nil)
+				So(w.Code, ShouldEqual, 500)
+				Convey("With the msg \"Internal server error\"", nil)
+				So(w.Body.String(), ShouldEqual, "Internal server error")
+			})
+
+		})
+
+		Convey("Test: /devices/device_ID/readings responds appropiately:", func() {
+
+			Convey("When an internal server error occurs", func() {
+				w := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/devices/testsen1/readings", nil)
 				router.ServeHTTP(w, req)
 				Convey("Then the response code should be 500", nil)
 				So(w.Code, ShouldEqual, 500)
