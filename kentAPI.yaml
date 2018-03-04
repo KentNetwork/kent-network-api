@@ -183,10 +183,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/Reading'
-        '400':
-          description: Invalid parameters
         '404':
-          description: Device not found
+          description: Device not found or device has sensors with no readings
   /sensors:
     get:
       tags:
@@ -369,10 +367,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/Reading'
-        '400':
-          description: Invalid parameters
         '404':
-          description: Device not found
+          description: No sensors found or system has sensors with no readings
 securityDefinitions:
   api_key:
     type: apiKey

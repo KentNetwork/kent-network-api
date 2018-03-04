@@ -314,6 +314,11 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 			}
 		}
 
+		if a.Readings == nil {
+			c.String(404, "Device not found or device has sensors with no readings")
+			return
+		}
+
 		c.JSON(http.StatusOK, a)
 	})
 
@@ -422,16 +427,59 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 		// today := c.Query("today")         // values for date
 		// date := c.Query("date")           //values on date
 		// since := c.Query("since")         // values since date
-		startDate := c.Query("startDate") // values from start_date until end_date
-		endDate := c.Query("endDate")     // values from start_date until end_date
-		if !(((startDate != "") && (endDate != "")) ||
-			((startDate == "") && (endDate == ""))) {
-			c.String(400, "Invalid parameters")
+		//startDate := c.Query("startDate") // values from start_date until end_date
+		//endDate := c.Query("endDate")     // values from start_date until end_date
+		type okResponse struct {
+			Meta     meta      `json:"meta"`
+			Readings []reading `json:"items"`
+		}
+
+		type couchView struct {
+			TotalRows int `json:"total_rows"`
+			Offset    int `json:"offset"`
+			Rows      []struct {
+				ID    string      `json:"id"`
+				Key   string      `json:"key"`
+				Value interface{} `json:"value"`
+			} `json:"rows"`
+		}
+
+		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/sensors/_view/getSensors")
+		if err != nil && code != 200 {
+			c.String(500, "Internal server error")
 			return
 		}
-		c.JSON(200, gin.H{
-			"message": "Here is all the readings from all the devices",
-		})
+
+		var couchResp couchView
+		if err = json.Unmarshal(resp, &couchResp); err != nil {
+			c.String(500, "Internal server error")
+			return
+		}
+
+		if len(couchResp.Rows) == 0 {
+			c.String(404, "No sensors found or system has sensors with no readings")
+			return
+		}
+
+		// Build OK response
+		var a okResponse
+		a.Meta = metaConsuctor(resultLimit)
+
+		for i := range couchResp.Rows {
+			readings, err := getSensorData(couchResp.Rows[i].ID, config.influxDb)
+			if err == nil && readings != nil {
+				for i := range readings {
+					a.Readings = append(a.Readings, readings[i])
+				}
+			}
+		}
+
+		if a.Readings == nil {
+			c.String(404, "No sensors found or system has sensors with no readings")
+			return
+		}
+
+		c.JSON(http.StatusOK, a)
 	})
 
 	return r
