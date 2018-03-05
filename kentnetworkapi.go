@@ -123,9 +123,15 @@ func queryCouchdb(request string) (code int, response []byte, err error) {
 	return code, response, err
 }
 
-func getSensorData(sensorID string, influxDb string) (readings []reading, err error) {
-
-	q := fmt.Sprintf("SELECT \"value\" FROM /.*/ WHERE (\"sensor_id\" = '%s') ORDER BY time DESC LIMIT %d ", sensorID, resultLimit)
+func getSensorData(sensorID string, latest bool, startDate time.Time, endDate time.Time, influxDb string) (readings []reading, err error) {
+	var q string
+	if latest {
+		q = fmt.Sprintf("SELECT last(\"value\") FROM /.*/ WHERE (\"sensor_id\" = '%s') ORDER BY time DESC LIMIT %d ", sensorID, resultLimit)
+	} else if (startDate != time.Time{}) && (endDate != time.Time{}) {
+		q = fmt.Sprintf("SELECT \"value\" FROM /.*/ WHERE (\"sensor_id\" = '%s' AND time >= '"+startDate.Format(time.RFC3339)+"' AND time <= '"+endDate.Format(time.RFC3339)+"') ORDER BY time DESC LIMIT %d ", sensorID, resultLimit)
+	} else {
+		q = fmt.Sprintf("SELECT \"value\" FROM /.*/ WHERE (\"sensor_id\" = '%s') ORDER BY time DESC LIMIT %d ", sensorID, resultLimit)
+	}
 	var response []client.Result
 	if response, err = queryInfluxDB(influxClient, q, influxDb); err == nil {
 		if response[0].Series == nil {

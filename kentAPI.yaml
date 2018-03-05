@@ -143,29 +143,20 @@ paths:
           description: Return latest reading
           required: false
           type: boolean
-        - name: date
-          in: query
-          description: Return readings for a date
-          required: false
-          type: string
         - name: startdate
           in: query
           description: >-
-            Return readings from and to a date. Must be used together with
-            `endDate`
+            Return readings from a date.
           required: false
           type: string
+          format: date-time
         - name: endDate
           in: query
           description: >-
-            Return readings from and to a date. Must be used together with
+            Return readings until a date. Must be used together with
             `startDate`
           required: false
-          type: string
-        - name: since
-          in: query
-          description: Return readings since a date
-          required: false
+          format: date-time
           type: string
       responses:
         '200':
@@ -255,29 +246,20 @@ paths:
           description: Return latest reading
           required: false
           type: boolean
-        - name: date
-          in: query
-          description: Return readings for a date
-          required: false
-          type: string
-        - name: startDate
+        - name: startdate
           in: query
           description: >-
-            Return readings from and to a date. Must be used together with
-            `endDate`
+            Return readings from a date.
           required: false
+          format: date-time
           type: string
         - name: endDate
           in: query
           description: >-
-            Return readings from and to a date. Must be used together with
+            Return readings until a date. Must be used together with
             `startDate`
           required: false
-          type: string
-        - name: since
-          in: query
-          description: Return readings since a date
-          required: false
+          format: date-time
           type: string
       responses:
         '200':
@@ -295,6 +277,8 @@ paths:
           description: Sensor not found or sensor has no readings
         '500':
             description: Internal server error
+        '400':
+          description: User parameter error
   /data/readings:
     get:
       tags:
@@ -312,29 +296,20 @@ paths:
           description: Return latest reading
           required: false
           type: boolean
-        - name: date
-          in: query
-          description: Return readings for a date
-          required: false
-          type: string
         - name: startdate
           in: query
           description: >-
-            Return readings from and to a date. Must be used together with
-            `endDate`
+            Return readings from a date.
           required: false
+          format: date-time
           type: string
         - name: endDate
           in: query
           description: >-
-            Return readings from and to a date. Must be used together with
+            Return readings until a date. Must be used together with
             `startDate`
           required: false
-          type: string
-        - name: since
-          in: query
-          description: Return readings since a date
-          required: false
+          format: date-time
           type: string
       responses:
         '200':
