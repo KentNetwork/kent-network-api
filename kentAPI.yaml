@@ -143,11 +143,6 @@ paths:
           description: Return latest reading
           required: false
           type: boolean
-        - name: today
-          in: query
-          description: Return readings for today
-          required: false
-          type: boolean
         - name: date
           in: query
           description: Return readings for a date
@@ -260,11 +255,6 @@ paths:
           description: Return latest reading
           required: false
           type: boolean
-        - name: today
-          in: query
-          description: Return readings for today
-          required: false
-          type: boolean
         - name: date
           in: query
           description: Return readings for a date
@@ -320,11 +310,6 @@ paths:
         - name: latest
           in: query
           description: Return latest reading
-          required: false
-          type: boolean
-        - name: today
-          in: query
-          description: Return readings for today
           required: false
           type: boolean
         - name: date

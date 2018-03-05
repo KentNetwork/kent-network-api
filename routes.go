@@ -284,6 +284,11 @@ func GET_sensors_id_readings(config runtimeConfig) func(*gin.Context) {
 			Readings []reading `json:"items"`
 		}
 
+		// Check if parameters have been passed.
+		if c.Param("today" == true) {
+
+		}
+
 		readings, err := getSensorData(c.Param("sensorId"), config.influxDb)
 
 		if err != nil {
