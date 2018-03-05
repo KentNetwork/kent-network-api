@@ -141,12 +141,12 @@ paths:
           in: query
           description: Return latest reading
           required: false
-          type: string
+          type: boolean
         - name: today
           in: query
           description: Return readings for today
           required: false
-          type: string
+          type: boolean
         - name: date
           in: query
           description: Return readings for a date
@@ -258,12 +258,12 @@ paths:
           in: query
           description: Return latest reading
           required: false
-          type: string
+          type: boolean
         - name: today
           in: query
           description: Return readings for today
           required: false
-          type: string
+          type: boolean
         - name: date
           in: query
           description: Return readings for a date
@@ -316,21 +316,16 @@ paths:
       security:
         - api_key: []
       parameters:
-        - name: parentDeviceId
-          in: query
-          description: Filter for sensor by parent device ID
-          required: false
-          type: string
         - name: latest
           in: query
           description: Return latest reading
           required: false
-          type: string
+          type: boolean
         - name: today
           in: query
           description: Return readings for today
           required: false
-          type: string
+          type: boolean
         - name: date
           in: query
           description: Return readings for a date
