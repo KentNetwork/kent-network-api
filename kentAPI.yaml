@@ -10,7 +10,7 @@ info:
     name: Apache 2.0
     url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
 host: api.kent.network
-basePath: /v2
+basePath: /
 tags:
   - name: devices
     description: Everything about devices
@@ -23,6 +23,7 @@ tags:
     description: All the readings
 schemes:
   - http
+  - https
 paths:
   /devices:
     get:
