@@ -125,7 +125,7 @@ func queryCouchdb(request string) (code int, response []byte, err error) {
 
 func getSensorData(sensorID string, influxDb string) (readings []reading, err error) {
 
-	q := fmt.Sprintf("SELECT \"value\" FROM /.*/ WHERE (\"sensor_id\" = '%s') LIMIT %d ", sensorID, resultLimit)
+	q := fmt.Sprintf("SELECT \"value\" FROM /.*/ WHERE (\"sensor_id\" = '%s') ORDER BY time DESC LIMIT %d ", sensorID, resultLimit)
 	var response []client.Result
 	if response, err = queryInfluxDB(influxClient, q, influxDb); err == nil {
 		if response[0].Series == nil {
