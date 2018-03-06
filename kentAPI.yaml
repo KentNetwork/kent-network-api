@@ -172,6 +172,8 @@ paths:
                   $ref: '#/definitions/Reading'
         '404':
           description: Device not found or device has sensors with no readings
+        '400':
+          description: User parameter error
   /sensors:
     get:
       tags:
@@ -325,6 +327,8 @@ paths:
                   $ref: '#/definitions/Reading'
         '404':
           description: No sensors found or system has sensors with no readings
+        '400':
+          description: User parameter error
 securityDefinitions:
   api_key:
     type: apiKey
