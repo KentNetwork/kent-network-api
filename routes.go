@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -164,6 +166,31 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 			} `json:"rows"`
 		}
 
+		var paramErr error
+		latest := false
+		validDate := false
+		var startDate time.Time
+		var endDate time.Time
+
+		if c.Query("latest") != "" {
+			latest, paramErr = strconv.ParseBool(c.Query("latest"))
+		} else if c.Query("startDate") != "" {
+			startDate, paramErr = time.Parse("2006-01-02T15:04:05.999Z07:00", c.Query("startDate"))
+			if c.Query("endDate") != "" {
+				endDate, paramErr = time.Parse("2006-01-02T15:04:05.999Z07:00", c.Query("endDate"))
+			} else {
+				endDate = time.Now()
+			}
+			if paramErr == nil {
+				validDate = true
+			}
+		}
+
+		if paramErr != nil {
+			c.String(400, "User supplied parameter error")
+			return
+		}
+
 		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
 		if err != nil && code != 200 {
 			c.String(500, "Internal server error")
@@ -186,12 +213,22 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 		a.Meta = newMeta(resultLimit)
 
 		for i := range couchResp.Rows {
-			readings, err := getSensorData(couchResp.Rows[i].ID, config.influxDb)
+
+			var readings []reading
+			if latest == false && validDate == false {
+				readings, err = getSensorData(couchResp.Rows[i].ID, false, time.Time{}, time.Time{}, config.influxDb)
+			} else if latest {
+				readings, err = getSensorData(couchResp.Rows[i].ID, true, time.Time{}, time.Time{}, config.influxDb)
+			} else if validDate {
+				readings, err = getSensorData(couchResp.Rows[i].ID, false, startDate, endDate, config.influxDb)
+			}
+
 			if err == nil && readings != nil {
 				for i := range readings {
 					a.Readings = append(a.Readings, readings[i])
 				}
 			}
+
 		}
 
 		if a.Readings == nil {
@@ -284,7 +321,39 @@ func GET_sensors_id_readings(config runtimeConfig) func(*gin.Context) {
 			Readings []reading `json:"items"`
 		}
 
-		readings, err := getSensorData(c.Param("sensorId"), config.influxDb)
+		var err error
+		latest := false
+		validDate := false
+		var startDate time.Time
+		var endDate time.Time
+
+		if c.Query("latest") != "" {
+			latest, err = strconv.ParseBool(c.Query("latest"))
+		} else if c.Query("startDate") != "" {
+			startDate, err = time.Parse("2006-01-02T15:04:05.999Z07:00", c.Query("startDate"))
+			if c.Query("endDate") != "" {
+				endDate, err = time.Parse("2006-01-02T15:04:05.999Z07:00", c.Query("endDate"))
+			} else {
+				endDate = time.Now()
+			}
+			if err == nil {
+				validDate = true
+			}
+		}
+
+		if err != nil {
+			c.String(400, "User supplied parameter error")
+			return
+		}
+
+		var readings []reading
+		if latest == false && validDate == false {
+			readings, err = getSensorData(c.Param("sensorId"), false, time.Time{}, time.Time{}, config.influxDb)
+		} else if latest {
+			readings, err = getSensorData(c.Param("sensorId"), true, time.Time{}, time.Time{}, config.influxDb)
+		} else if validDate {
+			readings, err = getSensorData(c.Param("sensorId"), false, startDate, endDate, config.influxDb)
+		}
 
 		if err != nil {
 			c.String(500, "Internal server error")
@@ -328,6 +397,31 @@ func GET_data_readings(config runtimeConfig) func(*gin.Context) {
 			} `json:"rows"`
 		}
 
+		var err error
+		latest := false
+		validDate := false
+		var startDate time.Time
+		var endDate time.Time
+
+		if c.Query("latest") != "" {
+			latest, err = strconv.ParseBool(c.Query("latest"))
+		} else if c.Query("startDate") != "" {
+			startDate, err = time.Parse("2006-01-02T15:04:05.999Z07:00", c.Query("startDate"))
+			if c.Query("endDate") != "" {
+				endDate, err = time.Parse("2006-01-02T15:04:05.999Z07:00", c.Query("endDate"))
+			} else {
+				endDate = time.Now()
+			}
+			if err == nil {
+				validDate = true
+			}
+		}
+
+		if err != nil {
+			c.String(400, "User supplied parameter error")
+			return
+		}
+
 		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/sensors/_view/getSensors")
 		if err != nil && code != 200 {
 			c.String(500, "Internal server error")
@@ -350,7 +444,16 @@ func GET_data_readings(config runtimeConfig) func(*gin.Context) {
 		a.Meta = newMeta(resultLimit)
 
 		for i := range couchResp.Rows {
-			readings, err := getSensorData(couchResp.Rows[i].ID, config.influxDb)
+
+			var readings []reading
+			if latest == false && validDate == false {
+				readings, err = getSensorData(couchResp.Rows[i].ID, false, time.Time{}, time.Time{}, config.influxDb)
+			} else if latest {
+				readings, err = getSensorData(couchResp.Rows[i].ID, true, time.Time{}, time.Time{}, config.influxDb)
+			} else if validDate {
+				readings, err = getSensorData(couchResp.Rows[i].ID, false, startDate, endDate, config.influxDb)
+			}
+
 			if err == nil && readings != nil {
 				for i := range readings {
 					a.Readings = append(a.Readings, readings[i])

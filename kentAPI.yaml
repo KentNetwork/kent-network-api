@@ -55,11 +55,11 @@ paths:
                 type: object
                 properties:
                   meta:
-                    $ref: '#/components/schemas/Meta'
+                    $ref: '#/definitions/Meta'
                   items:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Device'
+                      $ref: '#/definitions/Device'
         '500':
           description: Internal server error
   '/devices/{deviceId}':
@@ -147,7 +147,7 @@ paths:
           description: Return latest reading
           required: false
           schema:
-            type: string
+            type: boolean
         - name: today
           in: query
           description: Return readings for today
@@ -163,15 +163,15 @@ paths:
         - name: startdate
           in: query
           description: >-
-            Return readings from and to a date. Must be used together with
-            `endDate`
+            Return readings from a date.
           required: false
           schema:
             type: string
+            format: date-time
         - name: endDate
           in: query
           description: >-
-            Return readings from and to a date. Must be used together with
+            Return readings until a date. Must be used together with
             `startDate`
           required: false
           schema:
@@ -182,6 +182,7 @@ paths:
           required: false
           schema:
             type: string
+            format: date-time
       responses:
         '200':
           description: successful operation
@@ -198,6 +199,8 @@ paths:
                       $ref: '#/components/schemas/Reading'
         '404':
           description: Device not found or device has sensors with no readings
+        '400':
+          description: User parameter error
   /sensors:
     get:
       security:
@@ -282,29 +285,31 @@ paths:
           description: Return readings for today
           required: false
           schema:
-            type: string
-        - name: date
+            type: boolean
+        - name: startdate
           in: query
-          description: Return readings for a date
+          description: Return readings from a date
           required: false
           schema:
             type: string
+            format: date-time
         - name: startDate
           in: query
           description: >-
-            Return readings from and to a date. Must be used together with
-            `endDate`
+            Return readings untill a date. 
           required: false
           schema:
             type: string
+            format: date-time
         - name: endDate
           in: query
           description: >-
-            Return readings from and to a date. Must be used together with
+            Return readings until a date. Must be used together with
             `startDate`
           required: false
           schema:
             type: string
+            format: date-time
         - name: since
           in: query
           description: Return readings since a date
@@ -328,7 +333,9 @@ paths:
         '404':
           description: Sensor not found or sensor has no readings
         '500':
-          description: Internal server error
+            description: Internal server error
+        '400':
+          description: User parameter error
   /data/readings:
     get:
       security:
@@ -379,6 +386,7 @@ paths:
           required: false
           schema:
             type: string
+            format: date-time
         - name: since
           in: query
           description: Return readings since a date
@@ -500,4 +508,5 @@ components:
           type: string
         batteryType:
           type: string
+
 
