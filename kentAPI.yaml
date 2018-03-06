@@ -1,4 +1,8 @@
-swagger: '2.0'
+openapi: 3.0.0
+servers:
+  - url: 'http://api.kent.network/'
+  - url: 'https://api.kent.network/'
+  - url: 'http://localhost:7777/'
 info:
   description: API interface for Kent.Network
   version: 0.0.1
@@ -9,8 +13,6 @@ info:
   license:
     name: Apache 2.0
     url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
-host: api.kent.network
-basePath: /
 tags:
   - name: devices
     description: Everything about devices
@@ -21,420 +23,460 @@ tags:
     description: Everything about sensors
   - name: data
     description: All the readings
-schemes:
-  - http
-  - https
 paths:
+  /login:
+    post:
+      description: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: Login OK.
+        '401':
+          description: Failed to login
   /devices:
     get:
+      security:
+        - bearerAuth: []
       tags:
         - devices
       summary: All devices
       operationId: getDevices
-      produces:
-        - application/json
-      # parameters:
-      #   - name: catchmentID
-      #     in: query
-      #     description: Filter by ID of associated catchment area
-      #     required: false
-      #     type: string
-      #   - name: physicalID
-      #     in: query
-      #     description: Filter by ID of associated physical item
-      #     required: false
-      #     type: string
-      #   - name: nearestTown
-      #     in: query
-      #     description: Filter by nearest town
-      #     required: false
-      #     type: string
       responses:
         '200':
           description: successful operation
-          schema:
-            type: object
-            properties:
-              meta:
-                $ref: '#/definitions/Meta'
-              items:
-                type: array
-                items:
-                  $ref: '#/definitions/Device'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Device'
         '500':
           description: Internal server error
   '/devices/{deviceId}':
     get:
+      security:
+        - bearerAuth: []
       tags:
         - devices
       summary: A device
       description: Returns a single device
       operationId: getDeviceById
-      produces:
-        - application/json
       parameters:
         - name: deviceId
           in: path
           description: ID of device
           required: true
-          type: string
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
-          schema:
-            type: object
-            properties:
-              meta:
-                $ref: '#/definitions/Meta'
-              items:
-                $ref: '#/definitions/Device'
-        '500':
-          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+                  items:
+                    $ref: '#/components/schemas/Device'
         '404':
           description: Device not found
+        '500':
+          description: Internal server error
   '/devices/{deviceId}/sensors':
     get:
+      security:
+        - bearerAuth: []
       tags:
         - devices
       summary: All sensors for a device
       description: Returns the sensors of a single device
       operationId: getSensorsByDeviceId
-      produces:
-        - application/json
       parameters:
         - name: deviceId
           in: path
           description: ID of device
           required: true
-          type: string
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
-          schema:
-            type: object
-            properties:
-              meta:
-                $ref: '#/definitions/Meta'
-              items:
-                type: array
-                items:
-                  $ref: '#/definitions/Sensor'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sensor'
         '404':
           description: Device not found or device currently has no sensors
   '/devices/{deviceId}/readings':
     get:
+      security:
+        - bearerAuth: []
       tags:
         - devices
       summary: All readings for a device
       description: Returns the readings for a device
       operationId: getReadingsbyDeviceId
-      produces:
-        - application/json
-      security:
-        - api_key: []
       parameters:
         - name: deviceId
           in: path
           description: ID of device
           required: true
-          type: string
+          schema:
+            type: string
         - name: latest
           in: query
           description: Return latest reading
           required: false
-          type: string
+          schema:
+            type: string
         - name: today
           in: query
           description: Return readings for today
           required: false
-          type: string
+          schema:
+            type: string
         - name: date
           in: query
           description: Return readings for a date
           required: false
-          type: string
+          schema:
+            type: string
         - name: startdate
           in: query
           description: >-
             Return readings from and to a date. Must be used together with
             `endDate`
           required: false
-          type: string
+          schema:
+            type: string
         - name: endDate
           in: query
           description: >-
             Return readings from and to a date. Must be used together with
             `startDate`
           required: false
-          type: string
+          schema:
+            type: string
         - name: since
           in: query
           description: Return readings since a date
           required: false
-          type: string
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
-          schema:
-            type: object
-            properties:
-              meta:
-                $ref: '#/definitions/Meta'
-              items:
-                type: array
-                items:
-                  $ref: '#/definitions/Reading'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reading'
         '404':
           description: Device not found or device has sensors with no readings
   /sensors:
     get:
+      security:
+        - bearerAuth: []
       tags:
         - sensors
       summary: All sensors for all devices
       description: 'Gets the sensors, can be filtered'
       operationId: findSensors
-      produces:
-        - application/json
       responses:
         '200':
           description: successful operation
-          schema:
-            type: object
-            properties:
-              meta:
-                $ref: '#/definitions/Meta'
-              items:
-                type: array
-                items:
-                  $ref: '#/definitions/Sensor'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sensor'
         '500':
           description: Internal server error
   '/sensors/{sensorId}':
     get:
+      security:
+        - bearerAuth: []
       tags:
         - sensors
       summary: A sensor
       description: Returns a single sensor
       operationId: getSensorById
-      produces:
-        - application/json
       parameters:
         - name: sensorId
           in: path
           description: ID of sensor
           required: true
-          type: string
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
-          schema:
-            type: object
-            properties:
-              meta:
-                $ref: '#/definitions/Meta'
-              items:
-                $ref: '#/definitions/Sensor'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+                  items:
+                    $ref: '#/components/schemas/Sensor'
         '404':
           description: Sensor not found
         '500':
           description: Internal server error
   '/sensors/{sensorId}/readings':
     get:
+      security:
+        - bearerAuth: []
       tags:
         - sensors
       summary: All readings of a sensor
       description: Returns the readings of a sensor
       operationId: getReadingsbySensorId
-      produces:
-        - application/json
-      security:
-        - api_key: []
       parameters:
         - name: sensorId
           in: path
           description: ID of sensor
           required: true
-          type: string
+          schema:
+            type: string
         - name: latest
           in: query
           description: Return latest reading
           required: false
-          type: string
+          schema:
+            type: string
         - name: today
           in: query
           description: Return readings for today
           required: false
-          type: string
+          schema:
+            type: string
         - name: date
           in: query
           description: Return readings for a date
           required: false
-          type: string
+          schema:
+            type: string
         - name: startDate
           in: query
           description: >-
             Return readings from and to a date. Must be used together with
             `endDate`
           required: false
-          type: string
+          schema:
+            type: string
         - name: endDate
           in: query
           description: >-
             Return readings from and to a date. Must be used together with
             `startDate`
           required: false
-          type: string
+          schema:
+            type: string
         - name: since
           in: query
           description: Return readings since a date
           required: false
-          type: string
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
-          schema:
-            type: object
-            properties:
-              meta:
-                $ref: '#/definitions/Meta'
-              items:
-                type: array
-                items:
-                  $ref: '#/definitions/Reading'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reading'
         '404':
           description: Sensor not found or sensor has no readings
         '500':
-            description: Internal server error
+          description: Internal server error
   /data/readings:
     get:
+      security:
+        - bearerAuth: []
       tags:
         - data
       summary: All readings for all sensors across all devices
       description: Returns the readings of all sensors and devices
       operationId: getReadings
-      produces:
-        - application/json
-      security:
-        - api_key: []
       parameters:
         - name: parentDeviceId
           in: query
           description: Filter for sensor by parent device ID
           required: false
-          type: string
+          schema:
+            type: string
         - name: latest
           in: query
           description: Return latest reading
           required: false
-          type: string
+          schema:
+            type: string
         - name: today
           in: query
           description: Return readings for today
           required: false
-          type: string
+          schema:
+            type: string
         - name: date
           in: query
           description: Return readings for a date
           required: false
-          type: string
+          schema:
+            type: string
         - name: startdate
           in: query
           description: >-
             Return readings from and to a date. Must be used together with
             `endDate`
           required: false
-          type: string
+          schema:
+            type: string
         - name: endDate
           in: query
           description: >-
             Return readings from and to a date. Must be used together with
             `startDate`
           required: false
-          type: string
+          schema:
+            type: string
         - name: since
           in: query
           description: Return readings since a date
           required: false
-          type: string
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
-          schema:
-            type: object
-            properties:
-              meta:
-                $ref: '#/definitions/Meta'
-              items:
-                type: array
-                items:
-                  $ref: '#/definitions/Reading'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reading'
         '404':
           description: No sensors found or system has sensors with no readings
-securityDefinitions:
-  api_key:
-    type: apiKey
-    name: api_key
-    in: header
-definitions:
-  Sensor:
-    type: object
-    properties:
-      '@id':
-        type: string
-        description: URI of sensor
-      parentDevice:
-        type: string
-        description: the ID of the parent device
-      updateInterval:
-        type: number
-        format: integer
-      sensorType:
-        type: string
-      unit:
-        type: string
-  Meta:
-    type: object
-    properties:
-      publisher:
-        type: string
-      license:
-        type: string
-      version:
-        type: string
-      resultLimit:
-        type: integer
-        format: int64
-  Reading:
-    type: object
-    properties:
-      dateTime:
-        type: string
-      sensor:
-        type: string
-        description: URI of sensor
-      value:
-        type: number
-        format: float
-  Device:
-    type: object
-    properties:
-      '@id':
-        type: string
-        description: URI of device
-      friendlyName:
-        type: string
-      ttn:
-        type: object
-        properties:
-          app_id:
-            type: string
-          dev_id:
-            type: string
-          hardware_serial:
-            type: string
-      location:
-         type: object
-         properties:
+externalDocs:
+  description: Link to usage guide
+  url: 'https://kent.network'
+components:
+  securitySchemes:
+    bearerAuth:            # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: JWT    # optional, arbitrary value for documentation purposes 
+  schemas:
+    Login:
+      type: object
+      properties:
+        "username":
+           type: string
+        "password":
+           type: string
+    Sensor:
+      type: object
+      properties:
+        '@id':
+          type: string
+          description: URI of sensor
+        parentDevice:
+          type: string
+          description: the ID of the parent device
+        updateInterval:
+          type: number
+          format: integer
+        sensorType:
+          type: string
+        unit:
+          type: string
+    Meta:
+      type: object
+      properties:
+        publisher:
+          type: string
+        license:
+          type: string
+        version:
+          type: string
+        resultLimit:
+          type: integer
+          format: int64
+    Reading:
+      type: object
+      properties:
+        dateTime:
+          type: string
+        sensor:
+          type: string
+          description: URI of sensor
+        value:
+          type: number  
+          format: float
+    Device:
+      type: object
+      properties:
+        '@id':
+          type: string
+          description: URI of device
+        friendlyName:
+          type: string
+        ttn:
+          type: object
+          properties:
+            app_id:
+              type: string
+            dev_id:
+              type: string
+            hardware_serial:
+              type: string
+        location:
+          type: object
+          properties:
             nearestTown:
               type: string
             catchmentID:
@@ -454,10 +496,8 @@ definitions:
               type: string
             northing:
               type: string
-      hardwareRef:
-        type: string
-      batteryType:
-        type: string
-externalDocs:
-  description: Link to usage guide
-  url: 'https://kent.network'
+        hardwareRef:
+          type: string
+        batteryType:
+          type: string
+

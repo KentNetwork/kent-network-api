@@ -9,8 +9,9 @@ import (
 	"net/http"
 	"time"
 
+	jwt "github.com/appleboy/gin-jwt"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-
 	client "github.com/influxdata/influxdb/client/v2"
 )
 
@@ -37,6 +38,7 @@ func main() {
 		log.Fatal(err)
 	}
 	r := setupRouter(config)
+
 	// Listen and Server in 0.0.0.0:80
 	r.Run(config.serverBind)
 }
@@ -52,16 +54,70 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 	// gin.DisableConsoleColor()
 	r := gin.Default()
 
-	r.GET("/devices", GET_devices(config))
-	r.GET("/devices/:deviceId", GET_devices_id(config))
-	r.GET("/devices/:deviceId/sensors", GET_devices_id_sensors(config))
-	r.GET("/devices/:deviceId/readings", GET_device_id_readings(config))
-	r.GET("/sensors", GET_sensors(config))
-	r.GET("/sensors/:sensorId", GET_sensors_id(config))
-	r.GET("/sensors/:sensorId/readings", GET_sensors_id_readings(config))
-	r.GET("/data/readings", GET_data_readings(config))
+	authMiddleware := getJWTMiddleware()
+
+	r.Use(cors.Default())
+	r.POST("/login", authMiddleware.LoginHandler)
+
+	auth := r.Group("/")
+	auth.Use(authMiddleware.MiddlewareFunc())
+	auth.Use(cors.Default())
+
+	auth.GET("/devices", GET_devices(config))
+	auth.GET("/devices/:deviceId", GET_devices_id(config))
+	auth.GET("/devices/:deviceId/sensors", GET_devices_id_sensors(config))
+	auth.GET("/devices/:deviceId/readings", GET_device_id_readings(config))
+	auth.GET("/sensors", GET_sensors(config))
+	auth.GET("/sensors/:sensorId", GET_sensors_id(config))
+	auth.GET("/sensors/:sensorId/readings", GET_sensors_id_readings(config))
+	auth.GET("/data/readings", GET_data_readings(config))
 
 	return r
+}
+
+func getJWTMiddleware() *jwt.GinJWTMiddleware {
+	return &jwt.GinJWTMiddleware{
+		Realm:      "test zone",
+		Key:        []byte("secret key"),
+		Timeout:    time.Hour,
+		MaxRefresh: time.Hour,
+		Authenticator: func(userId string, password string, c *gin.Context) (string, bool) {
+			if (userId == "admin" && password == "admin") || (userId == "test" && password == "test") {
+				return userId, true
+			}
+
+			return userId, false
+		},
+		Authorizator: func(userId string, c *gin.Context) bool {
+			if userId == "admin" {
+				return true
+			}
+
+			return false
+		},
+		Unauthorized: func(c *gin.Context, code int, message string) {
+			c.JSON(code, gin.H{
+				"code":    code,
+				"message": message,
+			})
+		},
+		// TokenLookup is a string in the form of "<source>:<name>" that is used
+		// to extract token from the request.
+		// Optional. Default value "header:Authorization".
+		// Possible values:
+		// - "header:<name>"
+		// - "query:<name>"
+		// - "cookie:<name>"
+		TokenLookup: "header:Authorization",
+		// TokenLookup: "query:token",
+		// TokenLookup: "cookie:token",
+
+		// TokenHeadName is a string in the header. Default value is "Bearer"
+		TokenHeadName: "Bearer",
+
+		// TimeFunc provides the current time. You can override it to use another time value. This is useful for testing or if your server uses a different time zone than your tokens.
+		TimeFunc: time.Now,
+	}
 }
 
 func doFlags() runtimeConfig {
