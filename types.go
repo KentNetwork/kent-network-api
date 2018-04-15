@@ -63,6 +63,13 @@ type device struct {
 	BatteryType string   `json:"batteryType"`
 }
 
+// Gateway represents metadata about a gateway
+type gateway struct {
+	GatewayMac string  `json:"@gatewayMac"` // Mac address of gateway
+	Lat        float64 `json:"@lat"`        // Lat cord of gateway
+	Lon        float64 `json:"@lon"`        // Lon cord of gateway
+}
+
 type runtimeConfig struct {
 	influxUser string
 	influxPwd  string

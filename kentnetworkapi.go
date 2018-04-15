@@ -71,7 +71,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 	auth.GET("/sensors/:sensorId", GET_sensors_id(config))
 	auth.GET("/sensors/:sensorId/readings", GET_sensors_id_readings(config))
 	auth.GET("/data/readings", GET_data_readings(config))
-
+	auth.GET("/gateways", GET_gateways(config))
 	return r
 }
 
@@ -208,4 +208,32 @@ func getSensorData(sensorID string, latest bool, startDate time.Time, endDate ti
 		return readings, nil
 	}
 	return readings, err
+}
+
+func getGatewaysMeta(influxDb string) (gateways []gateway, err error) {
+	var q string
+
+	q = "select last(lat) as lat,lon from stat group by gatewayMac"
+
+	var response []client.Result
+	if response, err = queryInfluxDB(influxClient, q, influxDb); err == nil {
+		if response[0].Series == nil {
+			return nil, nil
+		}
+
+		for i := range response[0].Series {
+			r := response[0].Series[i].Tags["gatewayMac"]
+			s, sErr := response[0].Series[i].Values[0][1].(json.Number).Float64()
+			t, tErr := response[0].Series[i].Values[0][2].(json.Number).Float64()
+			if sErr == nil && tErr == nil {
+				var k gateway
+				k.GatewayMac = r
+				k.Lat = s
+				k.Lon = t
+				gateways = append(gateways, k)
+			}
+		}
+		return gateways, nil
+	}
+	return gateways, err
 }

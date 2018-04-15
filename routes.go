@@ -57,6 +57,29 @@ func GET_devices(config runtimeConfig) func(c *gin.Context) {
 		c.JSON(http.StatusOK, a)
 	}
 }
+
+func GET_gateways(config runtimeConfig) func(c *gin.Context) {
+	return func(c *gin.Context) {
+
+		type okResponse struct {
+			Meta     meta      `json:"meta"`
+			Gateways []gateway `json:"items"`
+		}
+
+		gateways, err := getGatewaysMeta("gatewayrxpkts")
+		if err != nil {
+			c.String(500, "Internal server error")
+			return
+		}
+
+		// Build OK response
+		var a okResponse
+		a.Meta = newMeta(resultLimit)
+		a.Gateways = gateways
+		c.JSON(http.StatusOK, a)
+	}
+}
+
 func GET_devices_id(config runtimeConfig) func(c *gin.Context) {
 	return func(c *gin.Context) {
 
