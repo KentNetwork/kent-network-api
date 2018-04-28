@@ -37,13 +37,13 @@ func GET_devices(config runtimeConfig) func(c *gin.Context) {
 
 		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/devices/_view/getDevices?include_docs=true")
 		if err != nil && code != 200 {
-			c.String(500, "Internal server error")
+			c.String(500, "Couchdb connection error")
 			return
 		}
 
 		var couchResp couchView
 		if err = json.Unmarshal(resp, &couchResp); err != nil {
-			c.String(500, "Internal server error")
+			c.String(500, "Unmarshalling error")
 			return
 		}
 
@@ -90,7 +90,7 @@ func GET_devices_id(config runtimeConfig) func(c *gin.Context) {
 
 		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/" + c.Param("deviceId"))
 		if err != nil || code == 500 {
-			c.String(500, "Internal server error")
+			c.String(500, "Couchdb connection error")
 			return
 		}
 		if code == 404 {
@@ -100,7 +100,7 @@ func GET_devices_id(config runtimeConfig) func(c *gin.Context) {
 
 		var returnedDevice device
 		if err = json.Unmarshal(resp, &returnedDevice); err != nil {
-			c.String(500, "Internal server error")
+			c.String(500, "Unmarshalling error")
 			return
 		}
 
@@ -134,13 +134,13 @@ func GET_devices_id_sensors(config runtimeConfig) func(c *gin.Context) {
 
 		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?include_docs=true&startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
 		if err != nil && code != 200 {
-			c.String(500, "Internal server error")
+			c.String(500, "Couchdb connection error")
 			return
 		}
 
 		var couchResp couchView
 		if err = json.Unmarshal(resp, &couchResp); err != nil {
-			c.String(500, "Internal server error")
+			c.String(500, "Unmarshalling error")
 			return
 		}
 
@@ -216,13 +216,13 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 
 		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
 		if err != nil && code != 200 {
-			c.String(500, "Internal server error")
+			c.String(500, "Couchdb connection error")
 			return
 		}
 
 		var couchResp couchView
 		if err = json.Unmarshal(resp, &couchResp); err != nil {
-			c.String(500, "Internal server error")
+			c.String(500, "Unmarshalling error")
 			return
 		}
 
@@ -283,13 +283,13 @@ func GET_sensors(config runtimeConfig) func(*gin.Context) {
 
 		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getSensors?include_docs=true")
 		if err != nil && code != 200 {
-			c.String(500, "Internal server error")
+			c.String(500, "Couchdb connection error")
 			return
 		}
 
 		var couchResp couchView
 		if err = json.Unmarshal(resp, &couchResp); err != nil {
-			c.String(500, "Internal server error")
+			c.String(500, "Unmarshalling error")
 			return
 		}
 
@@ -313,7 +313,7 @@ func GET_sensors_id(config runtimeConfig) func(*gin.Context) {
 
 		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/" + c.Param("sensorId"))
 		if err != nil || code == 500 {
-			c.String(500, "Internal server error")
+			c.String(500, "Couchdb connection error")
 			return
 		}
 
@@ -324,7 +324,7 @@ func GET_sensors_id(config runtimeConfig) func(*gin.Context) {
 
 		var returnedSensor sensor
 		if err = json.Unmarshal(resp, &returnedSensor); err != nil {
-			c.String(500, "Internal server error")
+			c.String(500, "Unmarshalling error")
 			return
 		}
 
@@ -379,7 +379,7 @@ func GET_sensors_id_readings(config runtimeConfig) func(*gin.Context) {
 		}
 
 		if err != nil {
-			c.String(500, "Internal server error")
+			c.String(500, "Influxdb connection error")
 			return
 		}
 
@@ -447,13 +447,13 @@ func GET_data_readings(config runtimeConfig) func(*gin.Context) {
 
 		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getSensors")
 		if err != nil && code != 200 {
-			c.String(500, "Internal server error")
+			c.String(500, "Couchdb connection error")
 			return
 		}
 
 		var couchResp couchView
 		if err = json.Unmarshal(resp, &couchResp); err != nil {
-			c.String(500, "Internal server error")
+			c.String(500, "Unmarshalling error")
 			return
 		}
 
@@ -477,7 +477,12 @@ func GET_data_readings(config runtimeConfig) func(*gin.Context) {
 				readings, err = getSensorData(couchResp.Rows[i].ID, false, startDate, endDate, config.InfluxDb)
 			}
 
-			if err == nil && readings != nil {
+			if err != nil {
+				c.String(500, "Influxdb connection error")
+				return
+			}
+
+			if readings != nil {
 				for i := range readings {
 					a.Readings = append(a.Readings, readings[i])
 				}
