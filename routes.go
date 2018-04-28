@@ -7,28 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	jwt "gopkg.in/dgrijalva/jwt-go.v3"
 )
-
-func GET_token(config runtimeConfig) func(c *gin.Context) {
-	return func(c *gin.Context) {
-
-		var mySigningKey = []byte("supersecretpassword")
-		token := jwt.New(jwt.SigningMethodHS256)
-
-		claims := token.Claims.(jwt.MapClaims)
-
-		/* Set token claims */
-		claims["admin"] = true
-		claims["name"] = "Dan"
-		claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
-
-		/* Sign the token with our secret */
-		tokenString, _ := token.SignedString(mySigningKey)
-		c.String(http.StatusOK, tokenString)
-		return
-	}
-}
 
 func GET_devices(config runtimeConfig) func(c *gin.Context) {
 	return func(c *gin.Context) {
