@@ -62,6 +62,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 	auth.Use(cors.Default())
 
 	auth.GET("/devices", GET_devices(config))
+	auth.PUT("/devices", PUT_devices(config))
 	auth.GET("/devices/:deviceId", GET_devices_id(config))
 	auth.GET("/devices/:deviceId/sensors", GET_devices_id_sensors(config))
 	auth.GET("/devices/:deviceId/readings", GET_device_id_readings(config))
