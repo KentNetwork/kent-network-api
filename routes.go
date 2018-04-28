@@ -58,6 +58,20 @@ func GET_devices(config runtimeConfig) func(c *gin.Context) {
 	}
 }
 
+func GET_status(config runtimeConfig) func(c *gin.Context) {
+	return func(c *gin.Context) {
+
+		type okResponse struct {
+			Status string `json:"status"`
+		}
+
+		// Build OK response
+		var a okResponse
+		a.Status = "ok"
+		c.JSON(http.StatusOK, a)
+	}
+}
+
 func GET_gateways(config runtimeConfig) func(c *gin.Context) {
 	return func(c *gin.Context) {
 
