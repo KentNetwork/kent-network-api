@@ -246,3 +246,24 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 		c.JSON(http.StatusOK, a)
 	}
 }
+
+
+func PUT_devices(config runtimeConfig) func(*gin.Context) {
+	return func(c *gin.Context) {
+		type putData struct {
+			Name string `json:"name"`
+		}
+
+		type newDev struct {
+			ID string `json:"id"`
+		}
+		
+		data := putData{}
+		if err := c.BindJSON(&data); err != nil  {
+			//TODO
+		}
+
+		ret := newDev{}
+		c.JSON(http.StatusOK, ret)	
+	}
+}
