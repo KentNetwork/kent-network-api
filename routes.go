@@ -246,17 +246,20 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 				readings, err = getSensorData(couchResp.Rows[i].ID, false, startDate, endDate, config.InfluxDb)
 			}
 
-			if err == nil && readings != nil {
-				for i := range readings {
-					a.Readings = append(a.Readings, readings[i])
-				}
+			if err != nil {
+				c.String(500, "Influxdb connection error")
+				return
 			}
 
-		}
+			if a.Readings == nil {
+				c.String(404, "Device not found or device has sensors with no readings")
+				return
+			}
 
-		if a.Readings == nil {
-			c.String(404, "Device not found or device has sensors with no readings")
-			return
+			for i := range readings {
+				a.Readings = append(a.Readings, readings[i])
+			}
+
 		}
 
 		c.JSON(http.StatusOK, a)
