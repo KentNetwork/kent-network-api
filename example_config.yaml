@@ -1,0 +1,6 @@
+serverbind: ":80"
+influxhost: "enterhost"
+influxuser: user
+influxpwd: password
+influxdb: database
+couchhost: "enterhost"

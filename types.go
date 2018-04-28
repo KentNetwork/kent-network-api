@@ -71,10 +71,14 @@ type gateway struct {
 }
 
 type runtimeConfig struct {
-	influxUser string
-	influxPwd  string
-	influxDb   string
-	serverBind string
-	influxHost string
-	couchHost  string
+	ServerBind string `yaml:"serverbind"`
+	InfluxHost string `yaml:"influxhost"`
+	InfluxUser string `yaml:"influxuser"`
+	InfluxPwd  string `yaml:"influxpwd"`
+	InfluxDb   string `yaml:"influxdb"`
+	CouchHost  string `yaml:"couchhost"`
+}
+
+type runtimeFlags struct {
+	configFile string
 }

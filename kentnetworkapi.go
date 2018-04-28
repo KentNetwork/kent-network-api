@@ -13,6 +13,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	client "github.com/influxdata/influxdb/client/v2"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -31,7 +32,9 @@ var events = [...]string{
 
 func main() {
 
-	config := doFlags()
+	runtimeFlags := doFlags()
+	config := importYmlConf(runtimeFlags.configFile)
+
 	var err error
 	influxClient, err = influxDBClient(config)
 	if err != nil {
@@ -40,7 +43,7 @@ func main() {
 	r := setupRouter(config)
 
 	// Listen and Server in 0.0.0.0:80
-	r.Run(config.serverBind)
+	r.Run(config.ServerBind)
 }
 
 // String() function will return the english name
@@ -120,29 +123,35 @@ func getJWTMiddleware() *jwt.GinJWTMiddleware {
 	}
 }
 
-func doFlags() runtimeConfig {
-	var config runtimeConfig
+func doFlags() runtimeFlags {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	flag.StringVar(&config.influxHost, "influxserver", `https://influxdb.kent.network`, "Influx server to connect to.")
-	flag.StringVar(&config.influxUser, "influxuser", `reader`, "Influx user to connect with.")
-	// TODO: Passwords shoudln't be read from command line when possible, as this leaves passwords in the shell history"
-	flag.StringVar(&config.influxPwd, "influxpwd", `asij8X3rNU8U`, "Influx password user to connect with.")
-	flag.StringVar(&config.influxDb, "influxdb", `readings`, "Influx database to use.")
-	flag.StringVar(&config.serverBind, "bind", ":80", "Port Bind definition eg, \":80\"")
-	flag.StringVar(&config.couchHost, "couchserver", `https://couchdb.kent.network`, "Couchdb server to connect to.")
-
+	var config runtimeFlags
+	flag.StringVar(&config.configFile, `config`, `config.yaml`, "Enter path for yaml file")
 	flag.Parse()
 
 	return config
 
 }
 
+func importYmlConf(yamlFilePath string) runtimeConfig {
+	var config runtimeConfig
+	yamlFile, err := ioutil.ReadFile(yamlFilePath)
+	if err != nil {
+		panic("Error reading yaml config")
+	}
+	err = yaml.Unmarshal(yamlFile, &config)
+	if err != nil {
+		panic("Error unmarshalling yaml config")
+	}
+	return config
+}
+
 func influxDBClient(c runtimeConfig) (client.Client, error) {
 	config := client.HTTPConfig{
-		Addr:     c.influxHost,
-		Username: c.influxUser,
-		Password: c.influxPwd}
+		Addr:     c.InfluxHost,
+		Username: c.InfluxUser,
+		Password: c.InfluxPwd}
 
 	client, err := client.NewHTTPClient(config)
 	return client, err

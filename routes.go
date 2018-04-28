@@ -35,7 +35,7 @@ func GET_devices(config runtimeConfig) func(c *gin.Context) {
 			} `json:"rows"`
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/devices/_view/getDevices?include_docs=true")
+		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/devices/_view/getDevices?include_docs=true")
 		if err != nil && code != 200 {
 			c.String(500, "Internal server error")
 			return
@@ -88,7 +88,7 @@ func GET_devices_id(config runtimeConfig) func(c *gin.Context) {
 			Device device `json:"items"`
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/" + c.Param("deviceId"))
+		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/" + c.Param("deviceId"))
 		if err != nil || code == 500 {
 			c.String(500, "Internal server error")
 			return
@@ -132,7 +132,7 @@ func GET_devices_id_sensors(config runtimeConfig) func(c *gin.Context) {
 			} `json:"rows"`
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?include_docs=true&startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
+		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?include_docs=true&startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
 		if err != nil && code != 200 {
 			c.String(500, "Internal server error")
 			return
@@ -214,7 +214,7 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 			return
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
+		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
 		if err != nil && code != 200 {
 			c.String(500, "Internal server error")
 			return
@@ -239,11 +239,11 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 
 			var readings []reading
 			if latest == false && validDate == false {
-				readings, err = getSensorData(couchResp.Rows[i].ID, false, time.Time{}, time.Time{}, config.influxDb)
+				readings, err = getSensorData(couchResp.Rows[i].ID, false, time.Time{}, time.Time{}, config.InfluxDb)
 			} else if latest {
-				readings, err = getSensorData(couchResp.Rows[i].ID, true, time.Time{}, time.Time{}, config.influxDb)
+				readings, err = getSensorData(couchResp.Rows[i].ID, true, time.Time{}, time.Time{}, config.InfluxDb)
 			} else if validDate {
-				readings, err = getSensorData(couchResp.Rows[i].ID, false, startDate, endDate, config.influxDb)
+				readings, err = getSensorData(couchResp.Rows[i].ID, false, startDate, endDate, config.InfluxDb)
 			}
 
 			if err == nil && readings != nil {
@@ -281,7 +281,7 @@ func GET_sensors(config runtimeConfig) func(*gin.Context) {
 			} `json:"rows"`
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/sensors/_view/getSensors?include_docs=true")
+		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getSensors?include_docs=true")
 		if err != nil && code != 200 {
 			c.String(500, "Internal server error")
 			return
@@ -311,7 +311,7 @@ func GET_sensors_id(config runtimeConfig) func(*gin.Context) {
 			Sensor sensor `json:"items"`
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/" + c.Param("sensorId"))
+		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/" + c.Param("sensorId"))
 		if err != nil || code == 500 {
 			c.String(500, "Internal server error")
 			return
@@ -371,11 +371,11 @@ func GET_sensors_id_readings(config runtimeConfig) func(*gin.Context) {
 
 		var readings []reading
 		if latest == false && validDate == false {
-			readings, err = getSensorData(c.Param("sensorId"), false, time.Time{}, time.Time{}, config.influxDb)
+			readings, err = getSensorData(c.Param("sensorId"), false, time.Time{}, time.Time{}, config.InfluxDb)
 		} else if latest {
-			readings, err = getSensorData(c.Param("sensorId"), true, time.Time{}, time.Time{}, config.influxDb)
+			readings, err = getSensorData(c.Param("sensorId"), true, time.Time{}, time.Time{}, config.InfluxDb)
 		} else if validDate {
-			readings, err = getSensorData(c.Param("sensorId"), false, startDate, endDate, config.influxDb)
+			readings, err = getSensorData(c.Param("sensorId"), false, startDate, endDate, config.InfluxDb)
 		}
 
 		if err != nil {
@@ -445,7 +445,7 @@ func GET_data_readings(config runtimeConfig) func(*gin.Context) {
 			return
 		}
 
-		code, resp, err := queryCouchdb(config.couchHost + "/kentnetwork/_design/sensors/_view/getSensors")
+		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getSensors")
 		if err != nil && code != 200 {
 			c.String(500, "Internal server error")
 			return
@@ -470,11 +470,11 @@ func GET_data_readings(config runtimeConfig) func(*gin.Context) {
 
 			var readings []reading
 			if latest == false && validDate == false {
-				readings, err = getSensorData(couchResp.Rows[i].ID, false, time.Time{}, time.Time{}, config.influxDb)
+				readings, err = getSensorData(couchResp.Rows[i].ID, false, time.Time{}, time.Time{}, config.InfluxDb)
 			} else if latest {
-				readings, err = getSensorData(couchResp.Rows[i].ID, true, time.Time{}, time.Time{}, config.influxDb)
+				readings, err = getSensorData(couchResp.Rows[i].ID, true, time.Time{}, time.Time{}, config.InfluxDb)
 			} else if validDate {
-				readings, err = getSensorData(couchResp.Rows[i].ID, false, startDate, endDate, config.influxDb)
+				readings, err = getSensorData(couchResp.Rows[i].ID, false, startDate, endDate, config.InfluxDb)
 			}
 
 			if err == nil && readings != nil {

@@ -12,20 +12,20 @@ import (
 
 var (
 	testConfig = runtimeConfig{
-		influxUser: `reader`,
-		influxPwd:  `asij8X3rNU8U`,
-		influxDb:   `readings`,
-		serverBind: ":80",
-		influxHost: `https://influxdb.kent.network`,
-		couchHost:  `https://couchdb.kent.network`,
+		InfluxUser: `reader`,
+		InfluxPwd:  `asij8X3rNU8U`,
+		InfluxDb:   `readings`,
+		ServerBind: `:80`,
+		InfluxHost: `https://influxdb.kent.network`,
+		CouchHost:  `https://couchdb.kent.network`,
 	}
 	badTestConfig = runtimeConfig{
-		influxUser: `reader`,
-		influxPwd:  `asij8X3rNU8U`,
-		influxDb:   `wrongdatabase`,
-		serverBind: ":80",
-		influxHost: `https://influxdb.kent.network`,
-		couchHost:  `https://couchdb.badrobot.network`,
+		InfluxUser: `baduser`,
+		InfluxPwd:  `badpwd`,
+		InfluxDb:   `wrongdatabase`,
+		ServerBind: `:80`,
+		InfluxHost: `https://influxdb.kent.network`,
+		CouchHost:  `https://couchdb.badrobot.network`,
 	}
 )
 
