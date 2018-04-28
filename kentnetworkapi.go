@@ -56,6 +56,7 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 	r.Use(cors.Default())
 	r.POST("/login", authMiddleware.LoginHandler)
 	r.GET("/status", GET_status(config))
+	r.GET("/login/token", GET_token(config))
 
 	auth := r.Group("/")
 	auth.Use(authMiddleware.MiddlewareFunc())
