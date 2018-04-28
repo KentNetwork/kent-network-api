@@ -11,14 +11,6 @@ import (
 )
 
 var (
-	testConfig = runtimeConfig{
-		InfluxUser: `reader`,
-		InfluxPwd:  `asij8X3rNU8U`,
-		InfluxDb:   `readings`,
-		ServerBind: `:80`,
-		InfluxHost: `https://influxdb.kent.network`,
-		CouchHost:  `https://couchdb.kent.network`,
-	}
 	badTestConfig = runtimeConfig{
 		InfluxUser: `baduser`,
 		InfluxPwd:  `badpwd`,
@@ -30,6 +22,7 @@ var (
 )
 
 func TestRoutes(t *testing.T) {
+	testConfig := importYmlConf("config.yaml")
 	var err error
 	influxClient, err = influxDBClient(testConfig)
 	if err != nil {

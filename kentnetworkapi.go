@@ -46,7 +46,6 @@ func main() {
 	r.Run(config.ServerBind)
 }
 
-
 func setupRouter(config runtimeConfig) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
