@@ -2,21 +2,29 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
+type serviceMessage struct {
+	Title string `json:"title"`
+	Created time.Time `json:"created"`
+	LastUpdated time.Time `json:lastupdated"`
+	Message string `json:"message"`
+}
+
 type serviceStatus struct {
 	Service  string   `json:"service"`
 	Status   string   `json:"status"`
-	Messages []string `json:"messages"`
+	Messages []serviceMessage`json:"messages"`
 }
 
 func getInfluxStatus(config runtimeConfig) serviceStatus {
 	return serviceStatus{
 		Service:  "influx",
 		Status:   "unknown",
-		Messages: []string{},
+		Messages: []serviceMessage{},
 	}
 
 }
@@ -26,7 +34,7 @@ func GET_status(config runtimeConfig) func(c *gin.Context) {
 		type okResponse struct {
 			Status   string          `json:"status"`
 			Services []serviceStatus `json:"services"`
-			Messages []string        `json:"messages"`
+			Messages []serviceMessage`json:"messages"`
 		}
 
 		services := []serviceStatus{getInfluxStatus(config)}
@@ -35,7 +43,14 @@ func GET_status(config runtimeConfig) func(c *gin.Context) {
 		var a okResponse
 		a.Status = "Operational"
 		a.Services = services
-		a.Messages = []string{"Ok... I think"}
+		a.Messages = []serviceMessage{serviceMessage{
+			Title: "test message",
+			Created: time.Now(),
+			LastUpdated: time.Now(),
+			Message: "I think it's ok",
+		},
+
+		}
 		c.JSON(http.StatusOK, a)
 	}
 }
