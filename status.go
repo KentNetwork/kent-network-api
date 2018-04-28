@@ -20,6 +20,22 @@ type serviceStatus struct {
 	Messages []serviceMessage `json:"messages"`
 }
 
+func getCouchStatus(config runtimeConfig) serviceStatus {
+	status := "ok"
+
+	_, err := http.Get(config.CouchHost + "/")
+	if err != nil {
+		status = "error"
+	}
+
+	return serviceStatus{
+		Service:  "couchDB",
+		Status:   status,
+		Messages: []serviceMessage{},
+	}
+
+}
+
 func getInfluxStatus(config runtimeConfig) serviceStatus {
 	status := "ok"
 
@@ -45,7 +61,10 @@ func GET_status(config runtimeConfig) func(c *gin.Context) {
 			Messages []serviceMessage `json:"messages"`
 		}
 
-		services := []serviceStatus{getInfluxStatus(config)}
+		services := []serviceStatus{
+			getInfluxStatus(config),
+			getCouchStatus(config),
+		}
 
 		// Build OK response
 		var a okResponse
