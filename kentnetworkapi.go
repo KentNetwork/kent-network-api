@@ -46,11 +46,6 @@ func main() {
 	r.Run(config.ServerBind)
 }
 
-// String() function will return the english name
-// that we want out constant events be recognized as
-func (event eventType) String() string {
-	return events[event-1]
-}
 
 func setupRouter(config runtimeConfig) *gin.Engine {
 	// Disable Console Color
