@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
 func GET_gateways(config runtimeConfig) func(c *gin.Context) {
 	return func(c *gin.Context) {
 

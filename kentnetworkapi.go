@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -9,10 +11,11 @@ import (
 	"net/http"
 	"time"
 
-	jwt "github.com/appleboy/gin-jwt"
+	auth0 "github.com/auth0-community/go-auth0"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	client "github.com/influxdata/influxdb/client/v2"
+	jose "gopkg.in/square/go-jose.v2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,6 +24,7 @@ const (
 )
 
 var influxClient client.Client
+var validator *auth0.JWTValidator
 
 var events = [...]string{
 	"Unseen",
@@ -40,7 +44,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	r := setupRouter(config)
+
+	// CORS -- update
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"PUT", "PATCH", "DELETE", "GET", "POST"},
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// Listen and Server in 0.0.0.0:80
 	r.Run(config.ServerBind)
@@ -51,72 +66,83 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 	// gin.DisableConsoleColor()
 	r := gin.Default()
 
-	authMiddleware := getJWTMiddleware()
-
-	r.Use(cors.Default())
-	r.POST("/login", authMiddleware.LoginHandler)
 	r.GET("/status", GET_status(config))
 
-	auth := r.Group("/")
-	auth.Use(authMiddleware.MiddlewareFunc())
-	auth.Use(cors.Default())
-
-	auth.GET("/devices", GET_devices(config))
-	auth.PUT("/devices", PUT_devices(config))
-	auth.GET("/devices/:deviceId", GET_devices_id(config))
-	auth.GET("/devices/:deviceId/sensors", GET_devices_id_sensors(config))
-	auth.GET("/devices/:deviceId/readings", GET_device_id_readings(config))
-	auth.GET("/sensors", GET_sensors(config))
-	auth.GET("/sensors/:sensorId", GET_sensors_id(config))
-	auth.GET("/sensors/:sensorId/readings", GET_sensors_id_readings(config))
-	auth.GET("/data/readings", GET_data_readings(config))
-	auth.GET("/gateways", GET_gateways(config))
+	r.GET("/devices", Auth0Groups(), GET_devices(config))
+	r.PUT("/devices", Auth0Groups(), PUT_devices(config))
+	r.GET("/devices/:deviceId", Auth0Groups(), GET_devices_id(config))
+	r.GET("/devices/:deviceId/sensors", Auth0Groups(), GET_devices_id_sensors(config))
+	r.GET("/devices/:deviceId/readings", Auth0Groups(), GET_device_id_readings(config))
+	r.GET("/sensors", Auth0Groups(), GET_sensors(config))
+	r.GET("/sensors/:sensorId", Auth0Groups(), GET_sensors_id(config))
+	r.GET("/sensors/:sensorId/readings", Auth0Groups(), GET_sensors_id_readings(config))
+	r.GET("/data/readings", Auth0Groups(), GET_data_readings(config))
+	r.GET("/gateways", Auth0Groups(), GET_gateways(config))
 	return r
 }
 
-func getJWTMiddleware() *jwt.GinJWTMiddleware {
-	return &jwt.GinJWTMiddleware{
-		Realm:      "test zone",
-		Key:        []byte("secret key"),
-		Timeout:    time.Hour,
-		MaxRefresh: time.Hour,
-		Authenticator: func(userId string, password string, c *gin.Context) (string, bool) {
-			if (userId == "admin" && password == "admin") || (userId == "test" && password == "test") {
-				return userId, true
-			}
+// LoadPublicKey loads a public key from PEM/DER-encoded data for jwt verifying
+func LoadPublicKey(data []byte) (interface{}, error) {
+	input := data
 
-			return userId, false
-		},
-		Authorizator: func(userId string, c *gin.Context) bool {
-			if userId == "admin" {
-				return true
-			}
-
-			return false
-		},
-		Unauthorized: func(c *gin.Context, code int, message string) {
-			c.JSON(code, gin.H{
-				"code":    code,
-				"message": message,
-			})
-		},
-		// TokenLookup is a string in the form of "<source>:<name>" that is used
-		// to extract token from the request.
-		// Optional. Default value "header:Authorization".
-		// Possible values:
-		// - "header:<name>"
-		// - "query:<name>"
-		// - "cookie:<name>"
-		TokenLookup: "header:Authorization",
-		// TokenLookup: "query:token",
-		// TokenLookup: "cookie:token",
-
-		// TokenHeadName is a string in the header. Default value is "Bearer"
-		TokenHeadName: "Bearer",
-
-		// TimeFunc provides the current time. You can override it to use another time value. This is useful for testing or if your server uses a different time zone than your tokens.
-		TimeFunc: time.Now,
+	block, _ := pem.Decode(data)
+	if block != nil {
+		input = block.Bytes
 	}
+
+	// Try to load SubjectPublicKeyInfo
+	pub, err0 := x509.ParsePKIXPublicKey(input)
+	if err0 == nil {
+		return pub, nil
+	}
+
+	cert, err1 := x509.ParseCertificate(input)
+	if err1 == nil {
+		return cert.PublicKey, nil
+	}
+
+	return nil, fmt.Errorf("square/go-jose: parse error, got '%s' and '%s'", err0, err1)
+}
+
+func init() {
+	//Creates a configuration with the Auth0 information
+	data, err := ioutil.ReadFile("./kentnetworkuk.pem")
+	if err != nil {
+		panic("Unable to read public key from disk")
+	}
+
+	secret, err := LoadPublicKey(data)
+	if err != nil {
+		panic("Invalid public key")
+	}
+	secretProvider := auth0.NewKeyProvider(secret)
+	configuration := auth0.NewConfiguration(secretProvider, []string{"kentnetwork"}, "https://kentnetworkuk.eu.auth0.com/", jose.RS256)
+	validator = auth0.NewValidator(configuration, nil)
+}
+
+func Auth0Groups(validGroups ...string) gin.HandlerFunc {
+
+	return gin.HandlerFunc(func(c *gin.Context) {
+
+		tok, err := validator.ValidateRequest(c.Request)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			c.Abort()
+			log.Println("Invalid token:", err)
+			return
+		}
+
+		claims := map[string]interface{}{}
+		err = validator.Claims(c.Request, tok, &claims)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
+			c.Abort()
+			log.Println("Invalid claims:", err)
+			return
+		}
+
+		c.Next()
+	})
 }
 
 func doFlags() runtimeFlags {
