@@ -38,6 +38,7 @@ func main() {
 
 	runtimeFlags := doFlags()
 	config := importYmlConf(runtimeFlags.configFile)
+	setupAuth0(config)
 
 	var err error
 	influxClient, err = influxDBClient(config)
@@ -104,11 +105,12 @@ func LoadPublicKey(data []byte) (interface{}, error) {
 	return nil, fmt.Errorf("square/go-jose: parse error, got '%s' and '%s'", err0, err1)
 }
 
-func init() {
+func setupAuth0(config runtimeConfig) {
+	publicKeyLocation := config.Auth0Key
 	//Creates a configuration with the Auth0 information
-	data, err := ioutil.ReadFile("./kentnetworkuk.pem")
+	data, err := ioutil.ReadFile(publicKeyLocation)
 	if err != nil {
-		panic("Unable to read public key from disk")
+		panic(fmt.Sprintf("Unable to read public key from disk (%s)", publicKeyLocation))
 	}
 
 	secret, err := LoadPublicKey(data)

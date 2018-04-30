@@ -77,6 +77,7 @@ type runtimeConfig struct {
 	InfluxPwd  string `yaml:"influxpwd"`
 	InfluxDb   string `yaml:"influxdb"`
 	CouchHost  string `yaml:"couchhost"`
+	Auth0Key   string `yaml:"auth0key,omitempty"`
 }
 
 type runtimeFlags struct {
