@@ -158,13 +158,14 @@ func doFlags() runtimeFlags {
 
 func importYmlConf(yamlFilePath string) runtimeConfig {
 	var config runtimeConfig
+	config.Auth0Key = ".kentnetworkuk.pem"
 	yamlFile, err := ioutil.ReadFile(yamlFilePath)
 	if err != nil {
-		panic("Error reading yaml config")
+		panic(fmt.Sprintf("Error reading yaml config (%s)", err.Error()))
 	}
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
-		panic("Error unmarshalling yaml config")
+		panic(fmt.Sprintf("Error unmarshalling yaml config (%s:%s)", yamlFilePath, err.Error()))
 	}
 	return config
 }
