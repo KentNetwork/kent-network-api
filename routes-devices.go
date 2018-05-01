@@ -1,13 +1,14 @@
-
 package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/satori/go.uuid"
 )
 
 func GET_devices(config runtimeConfig) func(c *gin.Context) {
@@ -58,7 +59,6 @@ func GET_devices(config runtimeConfig) func(c *gin.Context) {
 		c.JSON(http.StatusOK, a)
 	}
 }
-
 
 func GET_devices_id(config runtimeConfig) func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -140,7 +140,6 @@ func GET_devices_id_sensors(config runtimeConfig) func(c *gin.Context) {
 
 	}
 }
-
 
 func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 	return func(c *gin.Context) {
@@ -247,23 +246,30 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 	}
 }
 
-
 func PUT_devices(config runtimeConfig) func(*gin.Context) {
 	return func(c *gin.Context) {
 		type putData struct {
-			Name string `json:"name"`
+			Name string `json:"name" binding:"required"`
 		}
 
 		type newDev struct {
-			ID string `json:"id"`
+			ID uuid.UUID `json:"id"`
 		}
-		
+
 		data := putData{}
-		if err := c.BindJSON(&data); err != nil  {
-			//TODO
+		if err := c.BindJSON(&data); err != nil {
+			// TODO: less informative error message
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Failed to parse Body: %s", err.Error())})
+			return
 		}
 
 		ret := newDev{}
-		c.JSON(http.StatusOK, ret)	
+		if u4, err := uuid.NewV4(); err != nil {
+			// TODO: Handle err?
+			panic(err)
+		} else {
+			ret.ID = u4
+		}
+		c.JSON(http.StatusOK, ret)
 	}
 }
