@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/TheThingsNetwork/go-app-sdk"
+	client "github.com/influxdata/influxdb/client/v2"
 )
 
 // Reading - A sensor takes readings which consists of a timestamp and values
@@ -96,15 +97,48 @@ func (ttn ttnConfig) connect() ttnsdk.Client {
 	return ttn.client
 }
 
+type influxConfig struct {
+	Host   string `yaml:"host"`
+	User   string `yaml:"user"`
+	Pwd    string `yaml:"password"`
+	Db     string `yaml:"db"`
+	client client.Client
+}
+
+func (c influxConfig) influxDBClient() error {
+	config := client.HTTPConfig{
+		Addr:     c.Host,
+		Username: c.User,
+		Password: c.Pwd}
+
+	client, err := client.NewHTTPClient(config)
+	c.client = client
+	return err
+}
+
+// queryInfluxDB convenience function to query the influx database
+func (c influxConfig) queryInfluxDB(cmd string, database string) (res []client.Result, err error) {
+	q := client.Query{
+		Command:  cmd,
+		Database: database,
+	}
+	if response, err := c.client.Query(q); err == nil {
+		if response.Error() != nil {
+			return res, response.Error()
+		}
+		res = response.Results
+	} else {
+		return res, err
+	}
+	return res, nil
+}
+
 type runtimeConfig struct {
-	ServerBind string     `yaml:"serverbind"`
-	InfluxHost string     `yaml:"influxhost"`
-	InfluxUser string     `yaml:"influxuser"`
-	InfluxPwd  string     `yaml:"influxpwd"`
-	InfluxDb   string     `yaml:"influxdb"`
-	CouchHost  string     `yaml:"couchhost"`
-	Auth0Key   string     `yaml:"auth0key,omitempty"`
-	TTN        *ttnConfig `yaml:"ttn"`
+	ServerBind string        `yaml:"serverbind"`
+	CouchHost  string        `yaml:"couchhost"`
+	Auth0Key   string        `yaml:"auth0key,omitempty"`
+	Influx     *influxConfig `yaml:"influx"`
+	TTN        *ttnConfig    `yaml:"ttn"`
 }
 
 type runtimeFlags struct {

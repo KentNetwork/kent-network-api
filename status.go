@@ -40,7 +40,7 @@ func getInfluxStatus(config runtimeConfig) serviceStatus {
 	status := "ok"
 
 	//TODO: goto warning when ping is slow...
-	_, _, err := influxClient.Ping(10)
+	_, _, err := config.Influx.client.Ping(10)
 	if err != nil {
 		status = "error"
 	}

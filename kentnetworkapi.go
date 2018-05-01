@@ -23,7 +23,6 @@ const (
 	resultLimit = 100
 )
 
-var influxClient client.Client
 var validator *auth0.JWTValidator
 
 var events = [...]string{
@@ -41,7 +40,7 @@ func main() {
 	setupAuth0(config)
 
 	var err error
-	influxClient, err = influxDBClient(config)
+	err = config.Influx.influxDBClient()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -172,33 +171,6 @@ func importYmlConf(yamlFilePath string) runtimeConfig {
 	return config
 }
 
-func influxDBClient(c runtimeConfig) (client.Client, error) {
-	config := client.HTTPConfig{
-		Addr:     c.InfluxHost,
-		Username: c.InfluxUser,
-		Password: c.InfluxPwd}
-
-	client, err := client.NewHTTPClient(config)
-	return client, err
-}
-
-// queryInfluxDB convenience function to query the influx database
-func queryInfluxDB(clnt client.Client, cmd string, database string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: database,
-	}
-	if response, err := clnt.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
-}
-
 func queryCouchdb(request string) (code int, response []byte, err error) {
 	resp, err := http.Get(request)
 	if err != nil {
@@ -213,7 +185,7 @@ func queryCouchdb(request string) (code int, response []byte, err error) {
 	return code, response, err
 }
 
-func getSensorData(sensorID string, latest bool, startDate time.Time, endDate time.Time, influxDb string) (readings []reading, err error) {
+func getSensorData(influx influxConfig, sensorID string, latest bool, startDate time.Time, endDate time.Time, influxDb string) (readings []reading, err error) {
 	var q string
 	if latest {
 		q = fmt.Sprintf("SELECT last(\"value\") FROM /.*/ WHERE (\"sensor_id\" = '%s') ORDER BY time DESC LIMIT %d ", sensorID, resultLimit)
@@ -223,7 +195,7 @@ func getSensorData(sensorID string, latest bool, startDate time.Time, endDate ti
 		q = fmt.Sprintf("SELECT \"value\" FROM /.*/ WHERE (\"sensor_id\" = '%s') ORDER BY time DESC LIMIT %d ", sensorID, resultLimit)
 	}
 	var response []client.Result
-	if response, err = queryInfluxDB(influxClient, q, influxDb); err == nil {
+	if response, err = influx.queryInfluxDB(q, influxDb); err == nil {
 		if response[0].Series == nil {
 			return nil, nil
 		}
@@ -244,13 +216,13 @@ func getSensorData(sensorID string, latest bool, startDate time.Time, endDate ti
 	return readings, err
 }
 
-func getGatewaysMeta(influxDb string) (gateways []gateway, err error) {
+func getGatewaysMeta(influx influxConfig, influxDb string) (gateways []gateway, err error) {
 	var q string
 
 	q = "select last(lat) as lat,lon from stat group by gatewayMac"
 
 	var response []client.Result
-	if response, err = queryInfluxDB(influxClient, q, influxDb); err == nil {
+	if response, err = influx.queryInfluxDB(q, influxDb); err == nil {
 		if response[0].Series == nil {
 			return nil, nil
 		}
