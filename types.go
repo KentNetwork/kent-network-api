@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/TheThingsNetwork/go-app-sdk"
+)
+
 // Reading - A sensor takes readings which consists of a timestamp and values
 type reading struct {
 	DateTime string  `json:"dateTime"`
@@ -70,14 +74,37 @@ type gateway struct {
 	Lon        float64 `json:"lon"`        // Lon cord of gateway
 }
 
+type ttnConfig struct {
+	AppID         string `yaml:"appID"`
+	AppAccessKey  string `yaml:"appAccessKey"`
+	SdkClientName string `yaml:"sdkClientName"`
+	init          bool
+	client        ttnsdk.Client
+}
+
+func (ttn ttnConfig) connect() ttnsdk.Client {
+	/*
+		if ttn.init {
+			return ttn.client
+		}*/
+
+	ttn_config := ttnsdk.NewCommunityConfig(ttn.SdkClientName)
+	ttn_config.ClientVersion = "2.0.5"
+
+	ttn.client = ttn_config.NewClient(ttn.AppID, ttn.AppAccessKey)
+	ttn.init = true
+	return ttn.client
+}
+
 type runtimeConfig struct {
-	ServerBind string `yaml:"serverbind"`
-	InfluxHost string `yaml:"influxhost"`
-	InfluxUser string `yaml:"influxuser"`
-	InfluxPwd  string `yaml:"influxpwd"`
-	InfluxDb   string `yaml:"influxdb"`
-	CouchHost  string `yaml:"couchhost"`
-	Auth0Key   string `yaml:"auth0key,omitempty"`
+	ServerBind string     `yaml:"serverbind"`
+	InfluxHost string     `yaml:"influxhost"`
+	InfluxUser string     `yaml:"influxuser"`
+	InfluxPwd  string     `yaml:"influxpwd"`
+	InfluxDb   string     `yaml:"influxdb"`
+	CouchHost  string     `yaml:"couchhost"`
+	Auth0Key   string     `yaml:"auth0key,omitempty"`
+	TTN        *ttnConfig `yaml:"ttn"`
 }
 
 type runtimeFlags struct {
