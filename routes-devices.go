@@ -3,10 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	ttnsdk "github.com/TheThingsNetwork/go-app-sdk"
+	"github.com/TheThingsNetwork/go-utils/random"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/gin-gonic/gin"
 	"github.com/satori/go.uuid"
 )
@@ -249,10 +253,12 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 func PUT_devices(config runtimeConfig) func(*gin.Context) {
 	return func(c *gin.Context) {
 		type putData struct {
-			Name string `json:"name" binding:"required"`
+			Name  string `json:"name" binding:"required"`
+			owner string
 		}
 
 		type newDev struct {
+			*putData
 			ID uuid.UUID `json:"id"`
 		}
 
@@ -262,14 +268,43 @@ func PUT_devices(config runtimeConfig) func(*gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Failed to parse Body: %s", err.Error())})
 			return
 		}
+		data.owner = "unknown"
+
+		client := config.TTN.connect()
+		defer client.Close()
+
+		devices, err := client.ManageDevices()
+		if err != nil {
+			log.Printf("my-amazing-app: could not create device: %s", err.Error())
+			return
+		}
+
+		devID, err := uuid.NewV4()
+		if err != nil {
+			panic(err)
+		}
+
+		dev := new(ttnsdk.Device)
+		dev.AppID = config.TTN.AppID
+		dev.DevID = devID.String()
+		dev.Description = "A new device in my amazing app"
+		dev.AppEUI = types.AppEUI{0x70, 0xB3, 0xD5, 0x7E, 0xF0, 0x00, 0x00, 0x24} // Use the real AppEUI here
+
+		random.FillBytes(dev.DevEUI[:])
+
+		// Set a random AppKey
+		dev.AppKey = new(types.AppKey)
+		random.FillBytes(dev.AppKey[:])
+
+		if err := devices.Set(dev); err != nil {
+			log.Printf("my-amazing-app: could not create device: %s", err.Error())
+			return
+		}
 
 		ret := newDev{}
-		if u4, err := uuid.NewV4(); err != nil {
-			// TODO: Handle err?
-			panic(err)
-		} else {
-			ret.ID = u4
-		}
+		ret.ID = devID
+
 		c.JSON(http.StatusOK, ret)
+
 	}
 }
