@@ -105,7 +105,7 @@ func LoadPublicKey(data []byte) (interface{}, error) {
 }
 
 func setupAuth0(config runtimeConfig) {
-	publicKeyLocation := config.Auth0Key
+	publicKeyLocation := config.Auth0.Key
 	//Creates a configuration with the Auth0 information
 	data, err := ioutil.ReadFile(publicKeyLocation)
 	if err != nil {
@@ -159,7 +159,7 @@ func doFlags() runtimeFlags {
 
 func importYmlConf(yamlFilePath string) runtimeConfig {
 	var config runtimeConfig
-	config.Auth0Key = ".kentnetworkuk.pem"
+	config.Auth0.Key = ".kentnetworkuk.pem"
 	yamlFile, err := ioutil.ReadFile(yamlFilePath)
 	if err != nil {
 		panic(fmt.Sprintf("Error reading yaml config (%s)", err.Error()))
