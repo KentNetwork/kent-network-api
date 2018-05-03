@@ -17,7 +17,7 @@ func GET_gateways(config runtimeConfig) func(c *gin.Context) {
 			Gateways []gateway `json:"items"`
 		}
 
-		gateways, err := getGatewaysMeta(*config.Influx, "gatewayrxpkts")
+		gateways, err := getGatewaysMeta(config.Influx, "gatewayrxpkts")
 		if err != nil {
 			c.String(500, "Internal server error")
 			return
@@ -139,11 +139,11 @@ func GET_sensors_id_readings(config runtimeConfig) func(*gin.Context) {
 
 		var readings []reading
 		if latest == false && validDate == false {
-			readings, err = getSensorData(*config.Influx, c.Param("sensorId"), false, time.Time{}, time.Time{}, config.Influx.Db)
+			readings, err = getSensorData(config.Influx, c.Param("sensorId"), false, time.Time{}, time.Time{}, config.Influx.Db)
 		} else if latest {
-			readings, err = getSensorData(*config.Influx, c.Param("sensorId"), true, time.Time{}, time.Time{}, config.Influx.Db)
+			readings, err = getSensorData(config.Influx, c.Param("sensorId"), true, time.Time{}, time.Time{}, config.Influx.Db)
 		} else if validDate {
-			readings, err = getSensorData(*config.Influx, c.Param("sensorId"), false, startDate, endDate, config.Influx.Db)
+			readings, err = getSensorData(config.Influx, c.Param("sensorId"), false, startDate, endDate, config.Influx.Db)
 		}
 
 		if err != nil {
@@ -238,11 +238,11 @@ func GET_data_readings(config runtimeConfig) func(*gin.Context) {
 
 			var readings []reading
 			if latest == false && validDate == false {
-				readings, err = getSensorData(*config.Influx, couchResp.Rows[i].ID, false, time.Time{}, time.Time{}, config.Influx.Db)
+				readings, err = getSensorData(config.Influx, couchResp.Rows[i].ID, false, time.Time{}, time.Time{}, config.Influx.Db)
 			} else if latest {
-				readings, err = getSensorData(*config.Influx, couchResp.Rows[i].ID, true, time.Time{}, time.Time{}, config.Influx.Db)
+				readings, err = getSensorData(config.Influx, couchResp.Rows[i].ID, true, time.Time{}, time.Time{}, config.Influx.Db)
 			} else if validDate {
-				readings, err = getSensorData(*config.Influx, couchResp.Rows[i].ID, false, startDate, endDate, config.Influx.Db)
+				readings, err = getSensorData(config.Influx, couchResp.Rows[i].ID, false, startDate, endDate, config.Influx.Db)
 			}
 
 			if err != nil {

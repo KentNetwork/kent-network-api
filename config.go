@@ -71,8 +71,8 @@ type runtimeConfig struct {
 	ServerBind string        `yaml:"serverbind"`
 	CouchHost  string        `yaml:"couchhost"`
 	Auth0      auth0Config   `yaml:"auth0,omitempty"`
-	Influx     *influxConfig `yaml:"influx"`
-	TTN        *ttnConfig    `yaml:"ttn"`
+	Influx     influxConfig `yaml:"influx"`
+	TTN        ttnConfig    `yaml:"ttn"`
 }
 
 type runtimeFlags struct {

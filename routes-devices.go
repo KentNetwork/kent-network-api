@@ -223,11 +223,11 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 
 			var readings []reading
 			if latest == false && validDate == false {
-				readings, err = getSensorData(*config.Influx, couchResp.Rows[i].ID, false, time.Time{}, time.Time{}, config.Influx.Db)
+				readings, err = getSensorData(config.Influx, couchResp.Rows[i].ID, false, time.Time{}, time.Time{}, config.Influx.Db)
 			} else if latest {
-				readings, err = getSensorData(*config.Influx, couchResp.Rows[i].ID, true, time.Time{}, time.Time{}, config.Influx.Db)
+				readings, err = getSensorData(config.Influx, couchResp.Rows[i].ID, true, time.Time{}, time.Time{}, config.Influx.Db)
 			} else if validDate {
-				readings, err = getSensorData(*config.Influx, couchResp.Rows[i].ID, false, startDate, endDate, config.Influx.Db)
+				readings, err = getSensorData(config.Influx, couchResp.Rows[i].ID, false, startDate, endDate, config.Influx.Db)
 			}
 
 			if err != nil {
