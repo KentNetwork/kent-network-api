@@ -23,7 +23,7 @@ type serviceStatus struct {
 func getCouchStatus(config runtimeConfig) serviceStatus {
 	status := "ok"
 
-	_, err := http.Get(config.CouchHost + "/")
+	_, err := http.Get(config.Couch.Host + "/")
 	if err != nil {
 		status = "error"
 	}

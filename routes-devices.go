@@ -41,7 +41,7 @@ func GET_devices(config runtimeConfig) func(c *gin.Context) {
 			} `json:"rows"`
 		}
 
-		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/devices/_view/getDevices?include_docs=true")
+		code, resp, err := config.Couch.query("/kentnetwork/_design/devices/_view/getDevices?include_docs=true")
 		if err != nil && code != 200 {
 			c.String(500, "Couchdb connection error")
 			return
@@ -72,7 +72,7 @@ func GET_devices_id(config runtimeConfig) func(c *gin.Context) {
 			Device device `json:"items"`
 		}
 
-		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/" + c.Param("deviceId"))
+		code, resp, err := config.Couch.query("/kentnetwork/" + c.Param("deviceId"))
 		if err != nil || code == 500 {
 			c.String(500, "Couchdb connection error")
 			return
@@ -116,7 +116,7 @@ func GET_devices_id_sensors(config runtimeConfig) func(c *gin.Context) {
 			} `json:"rows"`
 		}
 
-		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?include_docs=true&startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
+		code, resp, err := config.Couch.query("/kentnetwork/_design/sensors/_view/getByDeviceID?include_docs=true&startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
 		if err != nil && code != 200 {
 			c.String(500, "Couchdb connection error")
 			return
@@ -198,7 +198,7 @@ func GET_device_id_readings(config runtimeConfig) func(*gin.Context) {
 			return
 		}
 
-		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getByDeviceID?startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
+		code, resp, err := config.Couch.query("/kentnetwork/_design/sensors/_view/getByDeviceID?startkey=\"" + c.Param("deviceId") + "\"&endkey=\"" + c.Param("deviceId") + "\ufff0\"")
 		if err != nil && code != 200 {
 			c.String(500, "Couchdb connection error")
 			return

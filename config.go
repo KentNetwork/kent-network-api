@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/TheThingsNetwork/go-app-sdk"
 	client "github.com/influxdata/influxdb/client/v2"
+	"io/ioutil"
+	"net/http"
 )
 
 type ttnConfig struct {
@@ -67,10 +69,29 @@ type auth0Config struct {
 	Key string `yaml:"key,omitempty"`
 }
 
+type couchConfig struct {
+	Host string `yaml:"couchhost"`
+}
+
+func (c couchConfig) query(request string) (code int, response []byte, err error) {
+	request = c.Host + request
+	resp, err := http.Get(request)
+	if err != nil {
+		return 500, nil, err
+	}
+	defer resp.Body.Close()
+	response, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 500, nil, err
+	}
+	code = resp.StatusCode
+	return code, response, err
+}
+
 type runtimeConfig struct {
-	ServerBind string        `yaml:"serverbind"`
-	CouchHost  string        `yaml:"couchhost"`
-	Auth0      auth0Config   `yaml:"auth0,omitempty"`
+	ServerBind string       `yaml:"serverbind"`
+	Couch      couchConfig  `yaml:"couch"`
+	Auth0      auth0Config  `yaml:"auth0,omitempty"`
 	Influx     influxConfig `yaml:"influx"`
 	TTN        ttnConfig    `yaml:"ttn"`
 }

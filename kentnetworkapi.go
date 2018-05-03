@@ -171,20 +171,6 @@ func importYmlConf(yamlFilePath string) runtimeConfig {
 	return config
 }
 
-func queryCouchdb(request string) (code int, response []byte, err error) {
-	resp, err := http.Get(request)
-	if err != nil {
-		return 500, nil, err
-	}
-	defer resp.Body.Close()
-	response, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return 500, nil, err
-	}
-	code = resp.StatusCode
-	return code, response, err
-}
-
 func getSensorData(influx influxConfig, sensorID string, latest bool, startDate time.Time, endDate time.Time, influxDb string) (readings []reading, err error) {
 	var q string
 	if latest {

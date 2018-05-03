@@ -49,7 +49,7 @@ func GET_sensors(config runtimeConfig) func(*gin.Context) {
 			} `json:"rows"`
 		}
 
-		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getSensors?include_docs=true")
+		code, resp, err := config.Couch.query("/kentnetwork/_design/sensors/_view/getSensors?include_docs=true")
 		if err != nil && code != 200 {
 			c.String(500, "Couchdb connection error")
 			return
@@ -79,7 +79,7 @@ func GET_sensors_id(config runtimeConfig) func(*gin.Context) {
 			Sensor sensor `json:"items"`
 		}
 
-		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/" + c.Param("sensorId"))
+		code, resp, err := config.Couch.query("/kentnetwork/" + c.Param("sensorId"))
 		if err != nil || code == 500 {
 			c.String(500, "Couchdb connection error")
 			return
@@ -213,7 +213,7 @@ func GET_data_readings(config runtimeConfig) func(*gin.Context) {
 			return
 		}
 
-		code, resp, err := queryCouchdb(config.CouchHost + "/kentnetwork/_design/sensors/_view/getSensors")
+		code, resp, err := config.Couch.query("/kentnetwork/_design/sensors/_view/getSensors")
 		if err != nil && code != 200 {
 			c.String(500, "Couchdb connection error")
 			return
