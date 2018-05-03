@@ -1,5 +1,9 @@
 package main
 
+import (
+	ttnsdk "github.com/TheThingsNetwork/go-app-sdk"
+)
+
 // Reading - A sensor takes readings which consists of a timestamp and values
 type reading struct {
 	DateTime string  `json:"dateTime"`
@@ -37,9 +41,17 @@ type status struct {
 
 // Ttn - A device contains an object with things network metadata
 type ttn struct {
-	AppID          string `json:"appId"`
-	DevID          string `json:"devId"`
-	HardwareSerial string `json:"hardwareSerial"`
+	AppEUI string `json:"appEUI"`
+	DevID  string `json:"devId"`
+	AppKey string `json:"appKey"`
+}
+
+func TtnFromTtnsdkDevice(d ttnsdk.Device) ttn {
+	return ttn{
+		AppEUI: d.AppEUI.String(),
+		DevID:  d.DevID,
+		AppKey: d.AppKey.String(),
+	}
 }
 
 // Location - A device contains an object with location metadata
@@ -56,11 +68,12 @@ type location struct {
 
 // Device represents a physical device
 type device struct {
-	ID          string   `json:"@id"` // URI of device
-	Location    location `json:"location"`
-	Ttn         ttn      `json:"ttn"`
-	HardwareRef string   `json:"hardwareRef"`
-	BatteryType string   `json:"batteryType"`
+	ID          string    `json:"@id"` // URI of device
+	Location    *location `json:"location,omitempty"`
+	Ttn         *ttn      `json:"ttn,omitempty"`
+	HardwareRef string    `json:"hardwareRef"`
+	BatteryType string    `json:"batteryType"`
+	Owner       string    `json:"owner"`
 }
 
 // Gateway represents metadata about a gateway

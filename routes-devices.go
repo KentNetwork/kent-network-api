@@ -287,7 +287,7 @@ func PUT_devices(config runtimeConfig) func(*gin.Context) {
 		dev := new(ttnsdk.Device)
 		dev.AppID = config.TTN.AppID
 		dev.DevID = devID.String()
-		dev.Description = "A new device in my amazing app"
+		dev.Description = fmt.Sprintf("Added through API, Owner:'%s'", data.owner)
 		dev.AppEUI = types.AppEUI{0x70, 0xB3, 0xD5, 0x7E, 0xF0, 0x00, 0x00, 0x24} // Use the real AppEUI here
 
 		random.FillBytes(dev.DevEUI[:])
@@ -301,10 +301,16 @@ func PUT_devices(config runtimeConfig) func(*gin.Context) {
 			return
 		}
 
-		ret := newDev{}
-		ret.ID = devID
+		ttn := TtnFromTtnsdkDevice(*dev)
+		device := device{
+			ID:          dev.DevID,
+			HardwareRef: "unknown",
+			BatteryType: "unknown",
+			Ttn:         &ttn,
+			Owner:       data.owner,
+		}
 
-		c.JSON(http.StatusOK, ret)
+		c.JSON(http.StatusOK, device)
 
 	}
 }
