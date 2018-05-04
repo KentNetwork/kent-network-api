@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"testing"
 
 	"net/http"
@@ -12,22 +11,14 @@ import (
 
 var (
 	badTestConfig = runtimeConfig{
-		InfluxUser: `baduser`,
-		InfluxPwd:  `badpwd`,
-		InfluxDb:   `wrongdatabase`,
+		Influx:     influxConfig{},
 		ServerBind: `:80`,
-		InfluxHost: `https://influxdb.kent.network`,
-		CouchHost:  `https://couchdb.badrobot.network`,
+		Couch:      couchConfig{},
 	}
 )
 
 func TestRoutes(t *testing.T) {
 	testConfig := importYmlConf("config.yaml")
-	var err error
-	influxClient, err = influxDBClient(testConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
 	router := setupRouter(testConfig)
 	Convey("Subject: Test device based routes", t, func() {
 
@@ -277,11 +268,6 @@ func Test500Handling(t *testing.T) {
 		})
 
 		Convey("Test: /sensors/sensor_id/readings responds appropriately:", func() {
-			var err error
-			influxClient, err = influxDBClient(badTestConfig)
-			if err != nil {
-				log.Fatal(err)
-			}
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", "/sensors/device:testsen1:sensorid:2/readings", nil)
 			router.ServeHTTP(w, req)
