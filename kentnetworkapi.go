@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	auth0 "github.com/auth0-community/go-auth0"
@@ -36,7 +37,19 @@ var events = [...]string{
 func main() {
 
 	runtimeFlags := doFlags()
-	config := importYmlConf(runtimeFlags.configFile)
+
+	var config runtimeConfig
+	if runtimeFlags.configFile == "" {
+		config = importEnvConf()
+	} else {
+		config = importYmlConf(runtimeFlags.configFile)
+	}
+
+	configErr := validConfig(config)
+	if configErr != nil {
+		panic(configErr)
+	}
+
 	setupAuth0(config)
 
 	var err error
@@ -168,6 +181,26 @@ func importYmlConf(yamlFilePath string) runtimeConfig {
 	if err != nil {
 		panic(fmt.Sprintf("Error unmarshalling yaml config (%s:%s)", yamlFilePath, err.Error()))
 	}
+	return config
+}
+
+func importEnvConf() runtimeConfig {
+	var config runtimeConfig
+
+	config.CouchHost = os.Getenv("COUCHHOST")
+	config.Influx.Db = os.Getenv("INFLUXDB")
+	config.Influx.Host = os.Getenv("INFLUXHOST")
+	config.Influx.Pwd = os.Getenv("INFLUXPWD")
+	config.Influx.User = os.Getenv("INFLUXUSER")
+	config.TTN.AppAccessKey = os.Getenv("TTNAPPKEY")
+	config.TTN.AppID = os.Getenv("TTNAPPID")
+	config.TTN.SdkClientName = os.Getenv("TTNSDKCLIENTNAME")
+	config.ServerBind = os.Getenv("SERVERBIND")
+	config.Auth0.Key = os.Getenv("AUTH0KEY")
+	if config.Auth0.Key == "" {
+		config.Auth0.Key = ".kentnetworkuk.pem"
+	}
+
 	return config
 }
 

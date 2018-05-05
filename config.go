@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+
 	"github.com/TheThingsNetwork/go-app-sdk"
 	client "github.com/influxdata/influxdb/client/v2"
 )
@@ -11,6 +13,32 @@ type ttnConfig struct {
 	SdkClientName string `yaml:"sdkClientName"`
 	init          bool
 	client        ttnsdk.Client
+}
+
+func validConfig(config runtimeConfig) error {
+	if config.Auth0.Key == "" {
+		return errors.New("Parameter: missing auth0 key")
+	} else if config.CouchHost == "" {
+		return errors.New("Parameter: missing couch host")
+	} else if config.ServerBind == "" {
+		return errors.New("Parameter: missing server bind")
+	} else if config.Influx.Db == "" {
+		return errors.New("Parameter: missing influx db")
+	} else if config.Influx.Pwd == "" {
+		return errors.New("Parameter: missing influx password")
+	} else if config.Influx.User == "" {
+		return errors.New("Parameter: missing influx user")
+	} else if config.Influx.Host == "" {
+		return errors.New("Parameter: missing influx host")
+	} else if config.TTN.AppAccessKey == "" {
+		return errors.New("Parameter: missing TTN app access key")
+	} else if config.TTN.AppID == "" {
+		return errors.New("Parameter: missing TTN app id")
+	} else if config.TTN.SdkClientName == "" {
+		return errors.New("Parameter: missing TTN sdk client name")
+	}
+
+	return nil
 }
 
 func (ttn ttnConfig) connect() ttnsdk.Client {
