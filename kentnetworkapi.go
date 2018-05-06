@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	auth0 "github.com/auth0-community/go-auth0"
@@ -17,7 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 	client "github.com/influxdata/influxdb/client/v2"
 	jose "gopkg.in/square/go-jose.v2"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -187,42 +185,6 @@ func doFlags() runtimeFlags {
 
 	return config
 
-}
-
-func importYmlConf(yamlFilePath string) runtimeConfig {
-	var config runtimeConfig
-	yamlFile, err := ioutil.ReadFile(yamlFilePath)
-	if err != nil {
-		panic(fmt.Sprintf("Error reading yaml config (%s)", err.Error()))
-	}
-	err = yaml.Unmarshal(yamlFile, &config)
-	if err != nil {
-		panic(fmt.Sprintf("Error unmarshalling yaml config (%s:%s)", yamlFilePath, err.Error()))
-	}
-	return config
-}
-
-func importEnvConf() runtimeConfig {
-	var config runtimeConfig
-
-	config.Couch.Host = os.Getenv("COUCHHOST")
-	config.Influx = influxConfig{
-		Db:   os.Getenv("INFLUXDB"),
-		Host: os.Getenv("INFLUXHOST"),
-		Pwd:  os.Getenv("INFLUXPWD"),
-		User: os.Getenv("INFLUXUSER"),
-	}
-
-	config.TTN = ttnConfig{
-		AppAccessKey:  os.Getenv("TTNAPPKEY"),
-		AppID:         os.Getenv("TTNAPPID"),
-		SdkClientName: os.Getenv("TTNSDKCLIENTNAME"),
-	}
-
-	config.ServerBind = os.Getenv("SERVERBIND")
-	config.Auth0.Key = os.Getenv("AUTH0KEY")
-
-	return config
 }
 
 func getSensorData(influx influxConfig, sensorID string, latest bool, startDate time.Time, endDate time.Time, influxDb string) (readings []reading, err error) {

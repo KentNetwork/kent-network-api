@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/TheThingsNetwork/go-app-sdk"
 	client "github.com/influxdata/influxdb/client/v2"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 )
 
 type ttnConfig struct {
@@ -98,7 +101,7 @@ type auth0Config struct {
 }
 
 type couchConfig struct {
-	Host string `yaml:"host"`
+	Host string `yaml:"host"` //Host to connect to for CouchDB e.g. "http://couch.example.com"
 }
 
 func (c couchConfig) query(request string) (code int, response []byte, err error) {
@@ -144,6 +147,7 @@ func (c couchConfig) put(request string, body interface{}) (code int, response [
 	return code, response, err
 }
 
+// Runtime configuration. This should be considdered immutable and all methods that modify it should return a new copy.
 type runtimeConfig struct {
 	ServerBind string       `yaml:"serverbind"`
 	Couch      couchConfig  `yaml:"couch"`
@@ -152,6 +156,60 @@ type runtimeConfig struct {
 	TTN        ttnConfig    `yaml:"ttn"`
 }
 
+// Configuration options that can be set by "flags"
 type runtimeFlags struct {
-	configFile string
+	configFile string // Location of the config File. If this is null the application was assume config is being passed in by ENVARGS
+}
+
+func importYmlConf(yamlFilePath string) runtimeConfig {
+	var config runtimeConfig
+	yamlFile, err := ioutil.ReadFile(yamlFilePath)
+	if err != nil {
+		panic(fmt.Sprintf("Error reading yaml config (%s)", err.Error()))
+	}
+	err = yaml.Unmarshal(yamlFile, &config)
+	if err != nil {
+		panic(fmt.Sprintf("Error unmarshalling yaml config (%s:%s)", yamlFilePath, err.Error()))
+	}
+	config = config.init()
+	return config
+}
+
+func importEnvConf() runtimeConfig {
+	var config runtimeConfig
+
+	config.Couch.Host = os.Getenv("COUCHHOST")
+	config.Influx = influxConfig{
+		Db:   os.Getenv("INFLUXDB"),
+		Host: os.Getenv("INFLUXHOST"),
+		Pwd:  os.Getenv("INFLUXPWD"),
+		User: os.Getenv("INFLUXUSER"),
+	}
+
+	config.TTN = ttnConfig{
+		AppAccessKey:  os.Getenv("TTNAPPKEY"),
+		AppID:         os.Getenv("TTNAPPID"),
+		SdkClientName: os.Getenv("TTNSDKCLIENTNAME"),
+	}
+
+	config.ServerBind = os.Getenv("SERVERBIND")
+	config.Auth0.Key = os.Getenv("AUTH0KEY")
+
+	config = config.init()
+
+	return config
+}
+
+// Check config and init clients.
+func (c runtimeConfig) init() runtimeConfig {
+	if err := validConfig(c); err != nil {
+		panic(err)
+	}
+
+	var err error
+	if c, err = c.influxDBClient(); err != nil {
+		panic(err)
+	}
+
+	return c
 }
