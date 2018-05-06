@@ -34,8 +34,6 @@ func validConfig(config runtimeConfig) error {
 		return errors.New("Parameter: missing TTN app access key")
 	} else if config.TTN.AppID == "" {
 		return errors.New("Parameter: missing TTN app id")
-	} else if config.TTN.SdkClientName == "" {
-		return errors.New("Parameter: missing TTN sdk client name")
 	}
 
 	return nil
