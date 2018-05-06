@@ -1,14 +1,19 @@
 version: 0.2
 
 phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
   build:
     commands:
       - echo Build started on `date`
-      - echo Compiling the Go code...
-      - go build 
+      - echo Building the Docker image...          
+      - docker build -t api .
+      - docker tag api:latest 184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api      
   post_build:
     commands:
       - echo Build completed on `date`
-artifacts:
-  files:
-    - kent-network-api
+      - echo Pushing the Docker image...
+      - docker push 184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api
+
