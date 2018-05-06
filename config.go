@@ -23,7 +23,6 @@ type ttnConfig struct {
 }
 
 func validConfig(config runtimeConfig) error {
-	log.Printf("%S", config)
 	if config.Couch.Host == "" {
 		return errors.New("Parameter: missing couch host")
 	} else if config.ServerBind == "" {
