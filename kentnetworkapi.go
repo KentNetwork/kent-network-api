@@ -205,17 +205,19 @@ func importEnvConf() runtimeConfig {
 	var config runtimeConfig
 
 	config.CouchHost = os.Getenv("COUCHHOST")
-	var a influxConfig
-	a.Db = os.Getenv("INFLUXDB")
-	a.Host = os.Getenv("INFLUXHOST")
-	a.Pwd = os.Getenv("INFLUXPWD")
-	a.User = os.Getenv("INFLUXUSER")
-	config.Influx = &a
-	var b ttnConfig
-	b.AppAccessKey = os.Getenv("TTNAPPKEY")
-	b.AppID = os.Getenv("TTNAPPID")
-	b.SdkClientName = os.Getenv("TTNSDKCLIENTNAME")
-	config.TTN = &b
+	config.Influx = &influxConfig{
+		Db:   os.Getenv("INFLUXDB"),
+		Host: os.Getenv("INFLUXHOST"),
+		Pwd:  os.Getenv("INFLUXPWD"),
+		User: os.Getenv("INFLUXUSER"),
+	}
+
+	config.TTN = &ttnConfig{
+		AppAccessKey:  os.Getenv("TTNAPPKEY"),
+		AppID:         os.Getenv("TTNAPPID"),
+		SdkClientName: os.Getenv("TTNSDKCLIENTNAME"),
+	}
+
 	config.ServerBind = os.Getenv("SERVERBIND")
 	config.Auth0.Key = os.Getenv("AUTH0KEY")
 
