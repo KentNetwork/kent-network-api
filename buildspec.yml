@@ -10,13 +10,13 @@ phases:
       - echo Build started on `date`
       - echo Building the Docker image...          
       - docker build -t api .
-      - "docker tag api 184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api:${CODEBUILD_BUILD_ID##*:}"      
+      - "docker tag api 184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api:latest"      
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - "docker push 184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api:${CODEBUILD_BUILD_ID##*:}"
-      - "echo {\\\"image\\\":\\\"184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api:${CODEBUILD_BUILD_ID##*:}\\\"} > image.json"
+      - "docker push 184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api:latest"
+      - "printf '[{"name":"api","imageUri":"184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api:latest"}]' > image.json"
 artifacts:
   files:
     - 'image.json'
