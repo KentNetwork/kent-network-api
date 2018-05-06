@@ -64,15 +64,16 @@ type influxConfig struct {
 	client client.Client
 }
 
-func (c influxConfig) influxDBClient() error {
+func (c runtimeConfig) influxDBClient() (runtimeConfig, error) {
+	i := c.Influx
 	config := client.HTTPConfig{
-		Addr:     c.Host,
-		Username: c.User,
-		Password: c.Pwd}
+		Addr:     i.Host,
+		Username: i.User,
+		Password: i.Pwd}
 
 	client, err := client.NewHTTPClient(config)
-	c.client = client
-	return err
+	c.Influx.client = client
+	return c, err
 }
 
 // queryInfluxDB convenience function to query the influx database

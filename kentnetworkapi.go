@@ -55,7 +55,8 @@ func main() {
 	}
 
 	var err error
-	err = config.Influx.influxDBClient()
+	config, err = config.influxDBClient()
+
 	if err != nil {
 		log.Fatal(err)
 	}
