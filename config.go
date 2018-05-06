@@ -16,9 +16,7 @@ type ttnConfig struct {
 }
 
 func validConfig(config runtimeConfig) error {
-	if config.Auth0.Key == "" {
-		return errors.New("Parameter: missing auth0 key")
-	} else if config.CouchHost == "" {
+	if config.CouchHost == "" {
 		return errors.New("Parameter: missing couch host")
 	} else if config.ServerBind == "" {
 		return errors.New("Parameter: missing server bind")

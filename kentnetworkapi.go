@@ -50,7 +50,9 @@ func main() {
 		panic(configErr)
 	}
 
-	setupAuth0(config)
+	if config.Auth0.Key != "" {
+		setupAuth0(config)
+	}
 
 	var err error
 	err = config.Influx.influxDBClient()
@@ -81,16 +83,32 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 
 	r.GET("/status", GET_status(config))
 
-	r.GET("/devices", Auth0Groups(), GET_devices(config))
-	r.PUT("/devices", Auth0Groups(), PUT_devices(config))
-	r.GET("/devices/:deviceId", Auth0Groups(), GET_devices_id(config))
-	r.GET("/devices/:deviceId/sensors", Auth0Groups(), GET_devices_id_sensors(config))
-	r.GET("/devices/:deviceId/readings", Auth0Groups(), GET_device_id_readings(config))
-	r.GET("/sensors", Auth0Groups(), GET_sensors(config))
-	r.GET("/sensors/:sensorId", Auth0Groups(), GET_sensors_id(config))
-	r.GET("/sensors/:sensorId/readings", Auth0Groups(), GET_sensors_id_readings(config))
-	r.GET("/data/readings", Auth0Groups(), GET_data_readings(config))
-	r.GET("/gateways", Auth0Groups(), GET_gateways(config))
+	// If an auth0 key is defined use this for endpoints
+	if config.Auth0.Key != "" {
+		r.GET("/devices", Auth0Groups(), GET_devices(config))
+		r.PUT("/devices", Auth0Groups(), PUT_devices(config))
+		r.GET("/devices/:deviceId", Auth0Groups(), GET_devices_id(config))
+		r.GET("/devices/:deviceId/sensors", Auth0Groups(), GET_devices_id_sensors(config))
+		r.GET("/devices/:deviceId/readings", Auth0Groups(), GET_device_id_readings(config))
+		r.GET("/sensors", Auth0Groups(), GET_sensors(config))
+		r.GET("/sensors/:sensorId", Auth0Groups(), GET_sensors_id(config))
+		r.GET("/sensors/:sensorId/readings", Auth0Groups(), GET_sensors_id_readings(config))
+		r.GET("/data/readings", Auth0Groups(), GET_data_readings(config))
+		r.GET("/gateways", Auth0Groups(), GET_gateways(config))
+	} else {
+		// Else no middleware -- this causes exception.
+		r.GET("/devices", GET_devices(config))
+		r.PUT("/devices", PUT_devices(config))
+		r.GET("/devices/:deviceId", GET_devices_id(config))
+		r.GET("/devices/:deviceId/sensors", GET_devices_id_sensors(config))
+		r.GET("/devices/:deviceId/readings", GET_device_id_readings(config))
+		r.GET("/sensors", GET_sensors(config))
+		r.GET("/sensors/:sensorId", GET_sensors_id(config))
+		r.GET("/sensors/:sensorId/readings", GET_sensors_id_readings(config))
+		r.GET("/data/readings", GET_data_readings(config))
+		r.GET("/gateways", GET_gateways(config))
+	}
+
 	return r
 }
 
@@ -163,7 +181,7 @@ func doFlags() runtimeFlags {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	var config runtimeFlags
-	flag.StringVar(&config.configFile, `config`, `config.yaml`, "Enter path for yaml file")
+	flag.StringVar(&config.configFile, `config`, ``, "Enter path for yaml file")
 	flag.Parse()
 
 	return config
@@ -172,7 +190,6 @@ func doFlags() runtimeFlags {
 
 func importYmlConf(yamlFilePath string) runtimeConfig {
 	var config runtimeConfig
-	config.Auth0.Key = ".kentnetworkuk.pem"
 	yamlFile, err := ioutil.ReadFile(yamlFilePath)
 	if err != nil {
 		panic(fmt.Sprintf("Error reading yaml config (%s)", err.Error()))
@@ -188,18 +205,19 @@ func importEnvConf() runtimeConfig {
 	var config runtimeConfig
 
 	config.CouchHost = os.Getenv("COUCHHOST")
-	config.Influx.Db = os.Getenv("INFLUXDB")
-	config.Influx.Host = os.Getenv("INFLUXHOST")
-	config.Influx.Pwd = os.Getenv("INFLUXPWD")
-	config.Influx.User = os.Getenv("INFLUXUSER")
-	config.TTN.AppAccessKey = os.Getenv("TTNAPPKEY")
-	config.TTN.AppID = os.Getenv("TTNAPPID")
-	config.TTN.SdkClientName = os.Getenv("TTNSDKCLIENTNAME")
+	var a influxConfig
+	a.Db = os.Getenv("INFLUXDB")
+	a.Host = os.Getenv("INFLUXHOST")
+	a.Pwd = os.Getenv("INFLUXPWD")
+	a.User = os.Getenv("INFLUXUSER")
+	config.Influx = &a
+	var b ttnConfig
+	b.AppAccessKey = os.Getenv("TTNAPPKEY")
+	b.AppID = os.Getenv("TTNAPPID")
+	b.SdkClientName = os.Getenv("TTNSDKCLIENTNAME")
+	config.TTN = &b
 	config.ServerBind = os.Getenv("SERVERBIND")
 	config.Auth0.Key = os.Getenv("AUTH0KEY")
-	if config.Auth0.Key == "" {
-		config.Auth0.Key = ".kentnetworkuk.pem"
-	}
 
 	return config
 }
