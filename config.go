@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"github.com/TheThingsNetwork/go-app-sdk"
 	client "github.com/influxdata/influxdb/client/v2"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -13,6 +17,29 @@ type ttnConfig struct {
 	SdkClientName string `yaml:"sdkClientName"`
 	init          bool
 	client        ttnsdk.Client
+}
+
+func validConfig(config runtimeConfig) error {
+	log.Printf("%S", config)
+	if config.Couch.Host == "" {
+		return errors.New("Parameter: missing couch host")
+	} else if config.ServerBind == "" {
+		return errors.New("Parameter: missing server bind")
+	} else if config.Influx.Db == "" {
+		return errors.New("Parameter: missing influx db")
+	} else if config.Influx.Pwd == "" {
+		return errors.New("Parameter: missing influx password")
+	} else if config.Influx.User == "" {
+		return errors.New("Parameter: missing influx user")
+	} else if config.Influx.Host == "" {
+		return errors.New("Parameter: missing influx host")
+	} else if config.TTN.AppAccessKey == "" {
+		return errors.New("Parameter: missing TTN app access key")
+	} else if config.TTN.AppID == "" {
+		return errors.New("Parameter: missing TTN app id")
+	}
+
+	return nil
 }
 
 func (ttn ttnConfig) connect() ttnsdk.Client {
@@ -70,12 +97,40 @@ type auth0Config struct {
 }
 
 type couchConfig struct {
-	Host string `yaml:"couchhost"`
+	Host string `yaml:"host"`
 }
 
 func (c couchConfig) query(request string) (code int, response []byte, err error) {
 	request = c.Host + request
 	resp, err := http.Get(request)
+	if err != nil {
+		return 500, nil, err
+	}
+	defer resp.Body.Close()
+	response, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 500, nil, err
+	}
+	code = resp.StatusCode
+	return code, response, err
+}
+
+func (c couchConfig) put(request string, body interface{}) (code int, response []byte, err error) {
+	request = c.Host + request
+
+	client := &http.Client{}
+	data, err := json.Marshal(body)
+	if err != nil {
+		// handle error
+		log.Fatal(err)
+	}
+	req, err := http.NewRequest(http.MethodPut, request, bytes.NewReader(data))
+	if err != nil {
+		// handle error
+		log.Fatal(err)
+	}
+	resp, err := client.Do(req)
+
 	if err != nil {
 		return 500, nil, err
 	}
