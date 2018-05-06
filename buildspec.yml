@@ -16,7 +16,7 @@ phases:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
       - "docker push 184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api:latest"
-      - "printf '[{"name":"api","imageUri":"184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api:latest"}]' > image.json"
+      - printf '[{"name":"api","imageUri":"184731027435.dkr.ecr.eu-west-2.amazonaws.com/kentnetwork/api:latest"}]' > image.json
 artifacts:
   files:
     - 'image.json'
