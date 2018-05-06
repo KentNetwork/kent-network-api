@@ -11,9 +11,15 @@ import (
 
 var (
 	badTestConfig = runtimeConfig{
-		Influx:     influxConfig{},
 		ServerBind: `:80`,
-		Couch:      couchConfig{},
+		Influx: influxConfig{
+			Db:   "badrobot",
+			Host: "http://127.0.0.1/",
+			Pwd:  "badpassword",
+			User: "baduser"},
+		Couch: couchConfig{
+			Host: `http://127.0.0.1/`,
+		},
 	}
 )
 
@@ -188,7 +194,7 @@ func Test500Handling(t *testing.T) {
 				Convey("Then the response code should be 500", nil)
 				So(w.Code, ShouldEqual, 500)
 				Convey("With the msg \"Internal server error\"", nil)
-				So(w.Body.String(), ShouldEqual, "Internal server error")
+				So(w.Body.String(), ShouldEqual, "Couchdb connection error")
 			})
 
 		})
@@ -202,7 +208,7 @@ func Test500Handling(t *testing.T) {
 				Convey("Then the response code should be 500", nil)
 				So(w.Code, ShouldEqual, 500)
 				Convey("With the msg \"Internal server error\"", nil)
-				So(w.Body.String(), ShouldEqual, "Internal server error")
+				So(w.Body.String(), ShouldEqual, "Couchdb connection error")
 			})
 
 		})
@@ -216,7 +222,7 @@ func Test500Handling(t *testing.T) {
 				Convey("Then the response code should be 500", nil)
 				So(w.Code, ShouldEqual, 500)
 				Convey("With the msg \"Internal server error\"", nil)
-				So(w.Body.String(), ShouldEqual, "Internal server error")
+				So(w.Body.String(), ShouldEqual, "Couchdb connection error")
 			})
 
 		})
@@ -230,7 +236,7 @@ func Test500Handling(t *testing.T) {
 				Convey("Then the response code should be 500", nil)
 				So(w.Code, ShouldEqual, 500)
 				Convey("With the msg \"Internal server error\"", nil)
-				So(w.Body.String(), ShouldEqual, "Internal server error")
+				So(w.Body.String(), ShouldEqual, "Couchdb connection error")
 			})
 
 		})
@@ -248,7 +254,7 @@ func Test500Handling(t *testing.T) {
 				Convey("Then the response code should be 500", nil)
 				So(w.Code, ShouldEqual, 500)
 				Convey("With the msg \"Internal server error\"", nil)
-				So(w.Body.String(), ShouldEqual, "Internal server error")
+				So(w.Body.String(), ShouldEqual, "Couchdb connection error")
 			})
 
 		})
@@ -262,7 +268,7 @@ func Test500Handling(t *testing.T) {
 				Convey("Then the response code should be 500", nil)
 				So(w.Code, ShouldEqual, 500)
 				Convey("With the msg \"Internal server error\"", nil)
-				So(w.Body.String(), ShouldEqual, "Internal server error")
+				So(w.Body.String(), ShouldEqual, "Couchdb connection error")
 			})
 
 		})
@@ -293,7 +299,7 @@ func Test500Handling(t *testing.T) {
 				Convey("Then the response code should be 500", nil)
 				So(w.Code, ShouldEqual, 500)
 				Convey("With the msg \"Internal server error\"", nil)
-				So(w.Body.String(), ShouldEqual, "Internal server error")
+				So(w.Body.String(), ShouldEqual, "Couchdb connection error")
 			})
 
 		})
