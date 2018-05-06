@@ -95,7 +95,6 @@ func setupRouter(config runtimeConfig) *gin.Engine {
 		r.GET("/data/readings", Auth0Groups(), GET_data_readings(config))
 		r.GET("/gateways", Auth0Groups(), GET_gateways(config))
 	} else {
-		// Else no middleware -- this causes exception.
 		r.GET("/devices", GET_devices(config))
 		r.PUT("/devices", PUT_devices(config))
 		r.GET("/devices/:deviceId", GET_devices_id(config))
